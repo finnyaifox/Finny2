@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finny - AI PDF Assistent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            color: #333;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            gap: 0;
+        }
+
+        .left-panel {
+            width: 40%;
+            background: white;
+            overflow-y: auto;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .right-panel {
+            width: 60%;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-title h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .file-upload {
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f7ff;
+        }
+
+        .file-upload:hover {
+            border-color: #764ba2;
+            background: #f3f0ff;
+        }
+
+        .file-upload.active {
+            border-color: #4ade80;
+            background: #f0fdf4;
+        }
+
+        .file-upload-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .file-upload-text {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-box {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .status-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .status-label {
+            color: #666;
+        }
+
+        .status-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            margin: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.5;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.assistant {
+            background: #f0f4ff;
+            color: #333;
+            align-self: flex-start;
+            max-width: 80%;
+        }
+
+        .message.user {
+            background: #667eea;
+            color: white;
+            align-self: flex-end;
+            max-width: 80%;
+        }
+
+        .chat-input-area {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            background: white;
+        }
+
+        .chat-input {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        .chat-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .chat-button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .chat-button:active {
+            transform: translateY(0);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #666;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .data-table thead {
+            background: #f0f4ff;
+        }
+
+        .data-table th {
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border: 1px solid #e0e7ff;
+        }
+
+        .data-table td {
+            padding: 10px;
+            border: 1px solid #e0e7ff;
+            word-break: break-word;
+        }
+
+        .data-table tr:nth-child(even) {
+            background: #f8f7ff;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite;
+        }
+
+        .loading:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes bounce {
+            0%, 80%, 100% {
+                opacity: 0.3;
+                transform: translateY(0);
+            }
+            40% {
+                opacity: 1;
+                transform: translateY(-10px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .left-panel {
+                width: 100%;
+                max-height: 50vh;
+            }
+
+            .right-panel {
+                width: 100%;
+                max-height: 50vh;
+            }
+
+            .message.assistant,
+            .message.user {
+                max-width: 100%;
+            }
+
+            .btn {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Linkes Panel -->
+        <div class="left-panel">
+            <div class="section">
+                <div class="section-title">00:00</div>
+                <div id="loading-text" style="text-align: center; color: #999; margin: 20px 0;">
+                    <div style="display: flex; gap: 4px; justify-content: center; margin-bottom: 10px;">
+                        <span class="loading"></span>
+                        <span class="loading"></span>
+                        <span class="loading"></span>
+                    </div>
+                    Laden...
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">👋 Willkommen</div>
+                <div style="color: #666; font-size: 14px; line-height: 1.6;">
+                    <p style="margin-bottom: 10px;">
+                        Hallo, ich bin <strong>Finny</strong> dein <strong>AI - PDF Assistent</strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📋 Status</div>
+                <div class="status-box">
+                    <div class="status-row">
+                        <span class="status-label">Status:</span>
+                        <span class="status-value" id="status-text">Bereit</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Felder:</span>
+                        <span class="status-value"><span id="completed-count">0</span> von <span id="total-count">0</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📤 PDF hochladen</div>
+                <div class="file-upload" id="file-upload">
+                    <div class="file-upload-icon">📄</div>
+                    <div class="file-upload-text">Klicken oder ziehen</div>
+                    <input type="file" id="file-input" accept=".pdf" style="display: none;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Rechtes Panel -->
+        <div class="right-panel">
+            <div class="header">
+                <div class="header-title">
+                    <span>💬 Chat</span>
+                </div>
+                <div class="header-status">
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span>Willkommen! 👋</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message assistant">
+                        <strong>Finny:</strong> Willkommen! 👋 Ich bin <strong>Finny</strong>, dein Assistent für PDF-Formulare. Lade links dein Formular hoch und ich führe dich durch jeden Eintrag. 🎯
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" class="chat-input" id="chat-input" placeholder="Nachricht eingeben..." disabled>
+                    <button class="chat-button" id="send-button" disabled>Senden</button>
+                </div>
+            </div>
+
+            <div style="padding: 20px; display: flex; gap: 10px; flex-wrap: wrap; background: #f8f9fa; border-top: 1px solid #eee;">
+                <button class="btn btn-primary" id="check-button" disabled>
+                    <span>✓</span> Check
+                </button>
+                <button class="btn btn-secondary" id="preview-button" disabled>
+                    <span>👁️</span> Vorschau
+                </button>
+                <button class="btn btn-secondary" id="data-button" disabled>
+                    <span>📄</span> Daten & Download
+                </button>
+                <button class="btn btn-secondary" id="reset-button" disabled>
+                    <span>↻</span> Reset
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal für Daten -->
+    <div class="modal" id="data-modal">
+        <div class="modal-content">
+            <div class="modal-header">📋 Eingegeben Daten</div>
+            <div class="modal-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Feld</th>
+                            <th>Wert</th>
+                        </tr>
+                    </thead>
+                    <tbody id="data-table-body">
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('data-modal').classList.remove('active')">Schließen</button>
+                <button class="btn btn-primary" id="download-button">📥 PDF Download</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal für Feldbearbeitung -->
+    <div class="modal" id="edit-modal">
+        <div class="modal-content">
+            <div class="modal-header">✏️ Feld korrigieren</div>
+            <div class="modal-body">
+                <input type="text" id="edit-input" class="chat-input" style="margin-bottom: 15px;">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('edit-modal').classList.remove('active')">Abbrechen</button>
+                <button class="btn btn-primary" id="edit-save-button">💾 Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal für Bestätigung -->
+    <div class="modal" id="confirm-modal">
+        <div class="modal-content">
+            <div class="modal-header">⚠️ Neustart</div>
+            <div class="modal-body">
+                <p>Bist du sicher? Alle Daten gehen verloren!</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('confirm-modal').classList.remove('active')">Abbrechen</button>
+                <button class="btn btn-primary" id="confirm-reset-button">Neu starten</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== AI STUDIO CODE VERBESSERUNGEN ===== -->
+    <!-- Hier werden die Verbesserungen aus ai_studio_code.html eingefügt -->
+    <script>
+        // Enhanced error handling und Recovery aus ai_studio_code
+        window.addEventListener('error', function(event) {
+            console.error('Global error:', event.error);
+            updateStatus('Fehler - Seite wird neu geladen...');
+            setTimeout(() => location.reload(), 3000);
+        });
+
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('Unhandled promise rejection:', event.reason);
+            event.preventDefault();
+        });
+
+        // Improved data validation
+        function validateData(data) {
+            if (!data || typeof data !== 'object') return false;
+            return Object.keys(data).length > 0;
+        }
+
+        // Better session management
+        const SESSION_KEY = 'finny_session';
+        
+        function saveSession(data) {
+            try {
+                sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
+            } catch (e) {
+                console.warn('Session storage unavailable');
+            }
+        }
+
+        function loadSession() {
+            try {
+                const data = sessionStorage.getItem(SESSION_KEY);
+                return data ? JSON.parse(data) : null;
+            } catch (e) {
+                console.warn('Could not load session');
+                return null;
+            }
+        }
+
+        function clearSession() {
+            try {
+                sessionStorage.removeItem(SESSION_KEY);
+            } catch (e) {
+                console.warn('Could not clear session');
+            }
+        }
+    </script>
+    <!-- ===== END AI STUDIO CODE ===== -->
+
+    <script>
+        const API_URL = 'http://localhost:3001/api';
+        
+        let currentSessionId = null;
+        let currentFieldIndex = 0;
+        let fields = [];
+        let collectedData = {};
+
+        // DOM Elements
+        const fileUpload = document.getElementById('file-upload');
+        const fileInput = document.getElementById('file-input');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+        const checkButton = document.getElementById('check-button');
+        const previewButton = document.getElementById('preview-button');
+        const dataButton = document.getElementById('data-button');
+        const resetButton = document.getElementById('reset-button');
+        const downloadButton = document.getElementById('download-button');
+        const editSaveButton = document.getElementById('edit-save-button');
+        const confirmResetButton = document.getElementById('confirm-reset-button');
+        const editInput = document.getElementById('edit-input');
+        const statusText = document.getElementById('status-text');
+        const completedCount = document.getElementById('completed-count');
+        const totalCount = document.getElementById('total-count');
+
+        // Session Generation
+        function generateSessionId() {
+            return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Event Listeners
+        fileUpload.addEventListener('click', () => fileInput.click());
+        fileUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUpload.classList.add('active');
+        });
+        fileUpload.addEventListener('dragleave', () => fileUpload.classList.remove('active'));
+        fileUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUpload.classList.remove('active');
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileUpload();
+            }
+        });
+
+        fileInput.addEventListener('change', handleFileUpload);
+        sendButton.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+        checkButton.addEventListener('click', checkData);
+        previewButton.addEventListener('click', previewData);
+        dataButton.addEventListener('click', showDataModal);
+        resetButton.addEventListener('click', confirmReset);
+        downloadButton.addEventListener('click', downloadPDF);
+        editSaveButton.addEventListener('click', saveEdit);
+        confirmResetButton.addEventListener('click', performReset);
+
+        // File Upload Handler
+        async function handleFileUpload() {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            updateStatus('Lädt PDF...');
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const uploadResponse = await fetch(`${API_URL}/upload-pdf`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const uploadData = await uploadResponse.json();
+                if (!uploadData.success) throw new Error(uploadData.error);
+
+                currentSessionId = generateSessionId();
+                await extractFields(uploadData.url);
+                updateStatus('PDF geladen - Bereit!');
+                enableControls();
+                addMessage('Finny', '✅ PDF erfolgreich geladen! Ich bin bereit, dich durch die Felder zu führen. Los geht\'s! 🚀');
+            } catch (error) {
+                console.error('Upload error:', error);
+                updateStatus('Fehler beim Upload');
+                addMessage('Finny', '❌ Fehler: ' + error.message);
+            }
+        }
+
+        // Extract Fields
+        async function extractFields(pdfUrl) {
+            try {
+                const response = await fetch(`${API_URL}/extract-fields`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: pdfUrl, sessionId: currentSessionId })
+                });
+
+                const data = await response.json();
+                if (!data.success) throw new Error(data.error);
+
+                fields = data.fields;
+                currentFieldIndex = 0;
+                collectedData = {};
+                totalCount.textContent = fields.length;
+                updateFieldCount();
+
+                if (fields.length > 0) {
+                    addMessage('Finny', `📋 Ich habe ${fields.length} Felder gefunden. Lass mich dir dabei helfen, sie auszufüllen!`);
+                    showNextField();
+                }
+            } catch (error) {
+                console.error('Extract error:', error);
+                addMessage('Finny', '❌ Fehler beim Extrahieren der Felder');
+            }
+        }
+
+        // Show Next Field
+        function showNextField() {
+            if (currentFieldIndex < fields.length) {
+                const field = fields[currentFieldIndex];
+                chatInput.disabled = false;
+                chatInput.focus();
+                addMessage('Finny', `**Feld ${currentFieldIndex + 1} von ${fields.length}:** ${field.fieldName}\n\n💡 *Gib einen Wert ein oder schreib "hilfe" für Tipps*`);
+                saveSession({ currentFieldIndex, collectedData, fields });
+            } else {
+                chatInput.disabled = true;
+                addMessage('Finny', '🎉 Alle Felder gefüllt! Jetzt kannst du die Daten speichern und das PDF herunterladen.');
+            }
+        }
+
+        // Send Message
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            addMessage('Du', message);
+            chatInput.value = '';
+
+            if (currentFieldIndex >= fields.length) return;
+
+            try {
+                const response = await fetch(`${API_URL}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: currentSessionId, message })
+                });
+
+                const data = await response.json();
+                if (!data.success) throw new Error(data.error);
+
+                addMessage('Finny', data.response);
+
+                if (data.action === 'saved') {
+                    const field = fields[currentFieldIndex];
+                    collectedData[field.fieldName] = data.cleanedValue || message;
+                    updateFieldCount();
+                    currentFieldIndex++;
+                    setTimeout(showNextField, 500);
+                } else if (data.action === 'skip') {
+                    currentFieldIndex++;
+                    setTimeout(showNextField, 500);
+                }
+            } catch (error) {
+                console.error('Chat error:', error);
+                addMessage('Finny', '❌ Fehler: ' + error.message);
+            }
+        }
+
+        // Add Message to Chat
+        function addMessage(sender, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender === 'Finny' ? 'assistant' : 'user'}`;
+            messageDiv.innerHTML = sender === 'Finny' ? text : text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Update Status
+        function updateStatus(status) {
+            statusText.textContent = status;
+        }
+
+        // Update Field Count
+        function updateFieldCount() {
+            completedCount.textContent = Object.keys(collectedData).length;
+        }
+
+        // Enable/Disable Controls
+        function enableControls() {
+            chatInput.disabled = false;
+            sendButton.disabled = false;
+            checkButton.disabled = false;
+            previewButton.disabled = false;
+            dataButton.disabled = false;
+            resetButton.disabled = false;
+        }
+
+        // Check Data
+        function checkData() {
+            const completed = Object.keys(collectedData).length;
+            const total = fields.length;
+            const percent = Math.round((completed / total) * 100);
+            addMessage('Finny', `📊 Fortschritt: ${completed}/${total} Felder (${percent}%)`);
+        }
+
+        // Preview Data (Simplified version, showing only key info)
+        function previewData() {
+            const keys = Object.keys(collectedData);
+            if (keys.length === 0) {
+                addMessage('Finny', '📋 Noch keine Daten eingegeben.');
+                return;
+            }
+            const preview = keys.slice(0, 3).map(k => `${k}: ${collectedData[k]}`).join('\n');
+            addMessage('Finny', `📋 Vorschau:\n${preview}${keys.length > 3 ? '\n...' : ''}`);
+        }
+
+        // Show Data Modal
+        function showDataModal() {
+            const tbody = document.getElementById('data-table-body');
+            tbody.innerHTML = '';
+            Object.entries(collectedData).forEach(([field, value]) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `<td>${field}</td><td>${value}</td>`;
+            });
+            document.getElementById('data-modal').classList.add('active');
+        }
+
+        // Download PDF
+        async function downloadPDF() {
+            try {
+                updateStatus('Lädt PDF...');
+                const response = await fetch(`${API_URL}/fill-pdf`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: fields[0]?.pdfUrl, sessionId: currentSessionId })
+                });
+
+                const data = await response.json();
+                if (!data.success) throw new Error(data.error);
+
+                const link = document.createElement('a');
+                link.href = data.url;
+                link.download = 'filled_form.pdf';
+                link.click();
+                updateStatus('PDF heruntergeladen!');
+                addMessage('Finny', '✅ PDF erfolgreich heruntergeladen!');
+            } catch (error) {
+                console.error('Download error:', error);
+                updateStatus('Fehler beim Download');
+                addMessage('Finny', '❌ Fehler: ' + error.message);
+            }
+        }
+
+        // Confirm Reset
+        function confirmReset() {
+            document.getElementById('confirm-modal').classList.add('active');
+        }
+
+        // Perform Reset
+        function performReset() {
+            document.getElementById('confirm-modal').classList.remove('active');
+            clearSession();
+            location.reload();
+        }
+
+        // Save Edit
+        function saveEdit() {
+            const value = editInput.value.trim();
+            if (value) {
+                const field = fields[currentFieldIndex];
+                collectedData[field.fieldName] = value;
+                updateFieldCount();
+                document.getElementById('edit-modal').classList.remove('active');
+                addMessage('Finny', `✅ Feld aktualisiert: ${value}`);
+            }
+        }
+
+        // Initial Load
+        window.addEventListener('load', () => {
+            const session = loadSession();
+            if (session) {
+                currentFieldIndex = session.currentFieldIndex;
+                collectedData = session.collectedData;
+                fields = session.fields;
+                totalCount.textContent = fields.length;
+                updateFieldCount();
+                enableControls();
+            }
+        });
+    </script>
+</body>
+</html>

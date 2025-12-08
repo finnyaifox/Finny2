@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: finny
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PDF_CO_API_KEY
+        sync: false
+      - key: COMET_API_KEY
+        sync: false
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
