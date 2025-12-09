@@ -527,7 +527,7 @@ app.post('/api/chat', async (req, res) => {
         commandsList += `• **${cmd}** - ${desc}\n`;
       }
       
-      session.history.push({ role: 'user', content: message });
+      session.history.push({ role: 'user', content: lastUserMsg });
       session.history.push({ role: 'assistant', content: commandsList });
       
       return res.json({
@@ -538,7 +538,7 @@ app.post('/api/chat', async (req, res) => {
     }
     
     if (intent.type === 'skip') {
-      session.history.push({ role: 'user', content: message });
+      session.history.push({ role: 'user', content: lastUserMsg });
       return res.json({
         success: true,
         response: '⏭️ Feld übersprungen.',
@@ -637,7 +637,7 @@ AKTUELLES FELD:
 - Beispiel: ${fieldInfo.example}
 - Validierung: ${fieldInfo.validation}
 
-Der Nutzer fragt: "${message}"
+Der Nutzer fragt: "${lastUserMsg}"
 
 Gib jetzt eine hilfreiche, konkrete Erklärung mit Beispiel!`;
 
@@ -647,7 +647,7 @@ Gib jetzt eine hilfreiche, konkrete Erklärung mit Beispiel!`;
               model: MODEL_NAME,
               messages: [
                 { role: 'system', content: systemPrompt },
-                { role: 'user', content: message }
+                { role: 'user', content: lastUserMsg }
               ],
               temperature: 0.7,
               max_tokens: 500
@@ -662,7 +662,7 @@ Gib jetzt eine hilfreiche, konkrete Erklärung mit Beispiel!`;
 
           let helpText = response.data.choices[0]?.message?.content || 'Entschuldigung, ich konnte keine Erklärung finden.';
           
-          session.history.push({ role: 'user', content: message });
+          session.history.push({ role: 'user', content: lastUserMsg });
           session.history.push({ role: 'assistant', content: helpText });
 
           return res.json({
@@ -692,7 +692,7 @@ Gib jetzt eine hilfreiche, konkrete Erklärung mit Beispiel!`;
     }
 
     // Normale Eingabe validieren
-    const validation = validateInput(message, field);
+    const validation = validateInput(lastUserMsg, field);
     
     if (!validation.valid) {
       return res.json({
@@ -717,7 +717,7 @@ AUFGABE: Validiere die Benutzereingabe für das Formularfeld.
 FELD: "${field.fieldName}"
 ERWARTUNG: ${fieldInfo.hint || 'Kein spezifischer Hinweis'}
 BEISPIEL: ${fieldInfo.example || 'Kein Beispiel'}
-EINGABE: "${message}"
+EINGABE: "${lastUserMsg}"
 
 Bewerte die Eingabe:
 - Ist sie vollständig und sinnvoll?
@@ -737,7 +737,7 @@ WICHTIG: Kurze unsinnige Eingaben wie "ok", "f", "test", "1111" sind INVALID!`;
             model: MODEL_NAME,
             messages: [
               { role: 'system', content: systemPrompt },
-              { role: 'user', content: `Validiere: "${message}"` }
+              { role: 'user', content: `Validiere: "${lastUserMsg}"` }
             ],
             temperature: 0.3,
             max_tokens: 200
@@ -773,8 +773,8 @@ WICHTIG: Kurze unsinnige Eingaben wie "ok", "f", "test", "1111" sind INVALID!`;
     }
 
     // Eingabe speichern
-    session.collectedData[field.fieldName] = message;
-    session.history.push({ role: 'user', content: message });
+    session.collectedData[field.fieldName] = lastUserMsg;
+    session.history.push({ role: 'user', content: lastUserMsg });
     session.history.push({ role: 'assistant', content: confirmationMsg });
 
     res.json({
