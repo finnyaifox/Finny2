@@ -901,11 +901,17 @@
     chatInput.value = '';
 
     conversationHistory.push({role:'user', content:userInput});
+
+    const payload = {
+        sessionId: currentSessionId,   // <-- NEU
+        messages:  conversationHistory
+    };
+
     try {
         const res = await fetch('/api/chat', {
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({messages: conversationHistory})
+            method : 'POST',
+            headers: {'Content-Type':'application/json'},
+            body   : JSON.stringify(payload)
         });
         const data = await res.json();
         addMessage('Finny', data.response);
