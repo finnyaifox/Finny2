@@ -183,6 +183,83 @@ const FIELD_HINTS = {
   }
 };
 
+// ============================================
+// 🧠 ERWEITERTE FELD-ANALYSE
+// ============================================
+const FIELD_TYPES = {
+  checkbox: ['Männlich', 'Weiblich', 'Divers', 'Ja', 'Nein', 'Vollzeit', 'Teilzeit'],
+  date: ['Datum', 'Geburtsdatum', 'Beginn', 'Ende'],
+  email: ['E-Mail', 'Email', 'Mail'],
+  phone: ['Telefon', 'Telefax', 'Mobil', 'Handy'],
+  address: ['Anschrift', 'Adresse', 'Straße', 'PLZ', 'Ort'],
+  number: ['Anzahl', 'Zahl', 'Nummer', 'Betrag']
+};
+
+function analyzeFieldType(fieldName) {
+  const lower = fieldName.toLowerCase();
+  
+  // Checkbox-Felder erkennen
+  for (const checkboxTerm of FIELD_TYPES.checkbox) {
+    if (lower.includes(checkboxTerm.toLowerCase())) {
+      return {
+        type: 'checkbox',
+        instruction: `Dies ist ein Auswahlfeld. Antworte mit "X" zum Ankreuzen oder "leer" zum Überspringen.`,
+        example: 'Schreibe "X" oder lasse es leer'
+      };
+    }
+  }
+  
+  // Datumsfelder
+  if (FIELD_TYPES.date.some(term => lower.includes(term.toLowerCase()))) {
+    return {
+      type: 'date',
+      instruction: 'Bitte gib ein Datum im Format TT.MM.JJJJ ein.',
+      example: '15.03.2024'
+    };
+  }
+  
+  // E-Mail
+  if (FIELD_TYPES.email.some(term => lower.includes(term.toLowerCase()))) {
+    return {
+      type: 'email',
+      instruction: 'Gib eine gültige E-Mail-Adresse ein.',
+      example: 'max.mustermann@beispiel.de'
+    };
+  }
+  
+  // Standard
+  return {
+    type: 'text',
+    instruction: 'Bitte fülle dieses Feld aus.',
+    example: 'Text eingeben'
+  };
+}
+
+function getFieldIntroduction(field) {
+  const fieldType = analyzeFieldType(field.fieldName);
+  const baseIntros = {
+    'Männlich': '📝 **Geschlecht auswählen**\nWenn du männlich bist, schreibe "X". Sonst lasse es leer oder schreibe "weiter".',
+    'Weiblich': '📝 **Geschlecht auswählen**\nWenn du weiblich bist, schreibe "X". Sonst lasse es leer oder schreibe "weiter".',
+    'Divers': '📝 **Geschlecht auswählen**\nWenn du divers bist, schreibe "X". Sonst lasse es leer oder schreibe "weiter".',
+    'Familienname': '👤 **Dein Nachname**\nGib deinen Familiennamen ein, wie er in deinem Ausweis steht.',
+    'Vorname': '👤 **Dein Vorname**\nGib deinen Vornamen ein.',
+    'Geburtsdatum': '📅 **Wann wurdest du geboren?**\nGib dein Geburtsdatum im Format TT.MM.JJJJ ein.',
+    'E-Mail': '📧 **Deine E-Mail-Adresse**\nGib eine gültige E-Mail-Adresse für die Kontaktaufnahme ein.',
+    'Telefon': '📞 **Deine Telefonnummer**\nGib deine Telefonnummer mit Vorwahl ein.',
+    'Anschrift': '🏠 **Deine Adresse**\nGib deine vollständige Anschrift ein (Straße, Hausnummer, PLZ, Ort).'
+  };
+  
+  // Suche nach passendem Intro
+  for (const [key, intro] of Object.entries(baseIntros)) {
+    if (field.fieldName.includes(key)) {
+      return intro + '\n\n' + fieldType.instruction;
+    }
+  }
+  
+  // Standard-Intro
+  return `📝 **${field.fieldName}**\n\n${fieldType.instruction}`;
+}
+
 // Befehle-System
 const COMMANDS = {
   'befehle': 'Zeigt alle verfügbaren Befehle',
