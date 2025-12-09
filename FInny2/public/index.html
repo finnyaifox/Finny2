@@ -530,19 +530,27 @@
         }
 
         /* RESPONSIVE */
-        @media (max-width: 900px) {
-            .container {
-                flex-direction: column;
-                padding: 10px;
-            }
-            .left-panel {
-                width: 100%;
-                max-height: 150px;
-            }
-            .right-panel {
-                width: 100%;
-            }
-        }
+        @media (max-width: 600px) {
+    .live-clock {
+        top: 10px;
+        right: 10px;
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    .clock-icon {
+        width: 24px;
+        height: 24px;
+    }
+    .header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    .btn {
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+}
     </style>
 </head>
 <body>
@@ -627,11 +635,11 @@
                 </div>
                 <div class="chat-input-area">
                     <input type="text" class="chat-input" id="chat-input" placeholder="Nachricht eingeben..." disabled>
-                    <button class="chat-button" id="send-button" disabled>Senden</button>
+                    <button class="chat-button" id="send-button" disabled>➤</button>
                 </div>
             </div>
 
-            <div style="padding: 20px; display: flex; gap: 10px; flex-wrap: wrap; background: #f8f9fa; border-top: 1px solid #eee;">
+            <div class="action-buttons">
                 <button class="btn btn-primary" id="check-button" disabled>
                     <span>✓</span> Check
                 </button>
@@ -822,7 +830,7 @@
             formData.append('file', file);
 
             try {
-                const uploadResponse = await fetch(`${API_URL}/upload-pdf`, {
+                const uploadResponse = await fetch(`${API_BASE}/upload-pdf`, {
                     method: 'POST',
                     body: formData
                 });
@@ -845,7 +853,7 @@
         // Extract Fields
         async function extractFields(pdfUrl) {
             try {
-                const response = await fetch(`${API_URL}/extract-fields`, {
+                const response = await fetch(`${API_BASE}/extract-fields`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: pdfUrl, sessionId: currentSessionId })
@@ -895,7 +903,7 @@
             if (currentFieldIndex >= fields.length) return;
 
             try {
-                const response = await fetch(`${API_URL}/chat`, {
+                const response = await fetch(`${API_BASE}/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ sessionId: currentSessionId, message })
@@ -985,7 +993,7 @@
         async function downloadPDF() {
             try {
                 updateStatus('Lädt PDF...');
-                const response = await fetch(`${API_URL}/fill-pdf`, {
+                const response = await fetch(`${API_BASE}/fill-pdf`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: fields[0]?.pdfUrl, sessionId: currentSessionId })
