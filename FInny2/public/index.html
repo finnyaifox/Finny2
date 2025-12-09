@@ -554,8 +554,7 @@
     </style>
 </head>
 <body>
-
-    <!-- ANIMIERTE UHR - AUS DEM ALTEN DESIGN -->
+    <!-- ANIMIERTE UHR -->
     <div class="live-clock">
         <div class="clock-icon"></div>
         <div class="clock-display">
@@ -565,44 +564,36 @@
     </div>
 
     <div class="container">
-       
-        <!-- Linkes Panel -->
+        <!-- Linkes Panel mit Feldliste -->
         <div class="left-panel">
-            <div class="section">
-                <div class="section-title">00:00</div>
-                <div id="loading-text" style="text-align: center; color: #999; margin: 20px 0;">
-                    <div style="display: flex; gap: 4px; justify-content: center; margin-bottom: 10px;">
-                        <span class="loading"></span>
-                        <span class="loading"></span>
-                        <span class="loading"></span>
-                    </div>
-                    Laden...
+            <!-- Feldliste Section -->
+            <div class="section" style="flex: 1; overflow-y: auto;">
+                <div class="section-title">
+                    📋 Formularfelder (<span id="field-progress">0/0</span>)
+                </div>
+                <div id="fields-list" style="padding: 10px;">
+                    <!-- Wird dynamisch gefüllt -->
                 </div>
             </div>
 
+            <!-- Status Section -->
             <div class="section">
-                <div class="section-title">👋 Willkommen</div>
-                <div style="color: #666; font-size: 14px; line-height: 1.6;">
-                    <p style="margin-bottom: 10px;">
-                        Hallo, ich bin <strong>Finny</strong> dein <strong>AI - PDF Assistent</strong>
-                    </p>
-                </div>
-            </div>
-
-            <div class="section">
-                <div class="section-title">📋 Status</div>
+                <div class="section-title">📊 Status</div>
                 <div class="status-box">
                     <div class="status-row">
-                        <span class="status-label">Status:</span>
+                        <span>Status:</span>
                         <span class="status-value" id="status-text">Bereit</span>
                     </div>
                     <div class="status-row">
-                        <span class="status-label">Felder:</span>
-                        <span class="status-value"><span id="completed-count">0</span> von <span id="total-count">0</span></span>
+                        <span>Fortschritt:</span>
+                        <span class="status-value">
+                            <span id="completed-count">0</span>/<span id="total-count">0</span>
+                        </span>
                     </div>
                 </div>
             </div>
 
+            <!-- Upload Section -->
             <div class="section">
                 <div class="section-title">📤 PDF hochladen</div>
                 <div class="file-upload" id="file-upload">
@@ -616,489 +607,535 @@
         <!-- Rechtes Panel -->
         <div class="right-panel">
             <div class="header">
-                <div class="header-title">
-                    <span>💬 Chat</span>
-                </div>
+                <div class="header-title">💬 Chat mit Finny</div>
                 <div class="header-status">
-                    <div class="status-indicator">
-                        <div class="status-dot"></div>
-                        <span>Willkommen! 👋</span>
-                    </div>
+                    <span id="ai-status">🟢 KI bereit</span>
                 </div>
             </div>
 
             <div class="chat-container">
                 <div class="chat-messages" id="chat-messages">
                     <div class="message assistant">
-                        <strong>Finny:</strong> Willkommen! 👋 Ich bin <strong>Finny</strong>, dein Assistent für PDF-Formulare. Lade links dein Formular hoch und ich führe dich durch jeden Eintrag. 🎯
+                        Willkommen! 👋 Ich bin Finny, dein KI-Assistent. Lade ein PDF hoch und ich helfe dir beim Ausfüllen!
                     </div>
                 </div>
                 <div class="chat-input-area">
-                    <input type="text" class="chat-input" id="chat-input" placeholder="Nachricht eingeben..." disabled>
+                    <input type="text" class="chat-input" id="chat-input" 
+                           placeholder="Schreibe eine Nachricht..." disabled>
                     <button class="chat-button" id="send-button" disabled>➤</button>
                 </div>
             </div>
 
             <div class="action-buttons">
-                <button class="btn btn-primary" id="check-button" disabled>
-                    <span>✓</span> Check
+                <button class="btn btn-primary" id="preview-button" disabled>
+                    👁️ Vorschau
                 </button>
-                <button class="btn btn-secondary" id="preview-button" disabled>
-                    <span>👁️</span> Vorschau
+                <button class="btn btn-secondary" id="skip-button" disabled>
+                    ⏭️ Überspringen
                 </button>
-                <button class="btn btn-secondary" id="data-button" disabled>
-                    <span>📄</span> Daten & Download
+                <button class="btn btn-secondary" id="download-button" disabled>
+                    📥 Download PDF
                 </button>
-                <button class="btn btn-secondary" id="reset-button" disabled>
-                    <span>↻</span> Reset
+                <button class="btn btn-secondary" id="reset-button">
+                    🔄 Neu starten
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Modal für Daten -->
-    <div class="modal" id="data-modal">
+    <!-- Vorschau Modal -->
+    <div class="modal" id="preview-modal">
         <div class="modal-content">
-            <div class="modal-header">📋 Eingegeben Daten</div>
+            <div class="modal-header">
+                <span>📋 Aktuelle Eingaben</span>
+                <button onclick="closeModal('preview-modal')" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;">✕</button>
+            </div>
             <div class="modal-body">
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Feld</th>
-                            <th>Wert</th>
+                            <th>Feldname</th>
+                            <th>Eingegebener Wert</th>
                         </tr>
                     </thead>
-                    <tbody id="data-table-body">
-                    </tbody>
+                    <tbody id="preview-table-body"></tbody>
                 </table>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="document.getElementById('data-modal').classList.remove('active')">Schließen</button>
-                <button class="btn btn-primary" id="download-button">📥 PDF Download</button>
+                <button class="btn btn-secondary" onclick="closeModal('preview-modal')">Schließen</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal für Feldbearbeitung -->
+    <!-- Feld bearbeiten Modal -->
     <div class="modal" id="edit-modal">
-        <div class="modal-content">
-            <div class="modal-header">✏️ Feld korrigieren</div>
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <span>✏️ Feld bearbeiten</span>
+                <button onclick="closeModal('edit-modal')" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;">✕</button>
+            </div>
             <div class="modal-body">
-                <input type="text" id="edit-input" class="chat-input" style="margin-bottom: 15px;">
+                <p id="edit-field-name" style="color: var(--primary); margin-bottom: 10px;"></p>
+                <input type="text" id="edit-input" class="chat-input" style="width: 100%;">
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="document.getElementById('edit-modal').classList.remove('active')">Abbrechen</button>
-                <button class="btn btn-primary" id="edit-save-button">💾 Speichern</button>
+                <button class="btn btn-secondary" onclick="closeModal('edit-modal')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="saveFieldEdit()">💾 Speichern</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal für Bestätigung -->
-    <div class="modal" id="confirm-modal">
-        <div class="modal-content">
-            <div class="modal-header">⚠️ Neustart</div>
-            <div class="modal-body">
-                <p>Bist du sicher? Alle Daten gehen verloren!</p>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="document.getElementById('confirm-modal').classList.remove('active')">Abbrechen</button>
-                <button class="btn btn-primary" id="confirm-reset-button">Neu starten</button>
-            </div>
-        </div>
-    </div>
+    <!-- CSS Ergänzungen -->
+    <style>
+        /* Feldliste Styles */
+        .field-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
 
-    <!-- ===== AI STUDIO CODE VERBESSERUNGEN ===== -->
-    <!-- Hier werden die Verbesserungen aus ai_studio_code.html eingefügt -->
+        .field-item:hover {
+            background: rgba(255,126,33,0.1);
+            border-color: var(--primary);
+        }
+
+        .field-item.completed {
+            background: rgba(46, 204, 113, 0.15);
+            border-color: var(--accent-green);
+        }
+
+        .field-item.active {
+            background: rgba(255,126,33,0.2);
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .field-name {
+            flex: 1;
+            font-size: 12px;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .field-item.completed .field-name {
+            color: var(--accent-green);
+            text-decoration: line-through;
+        }
+
+        .field-value {
+            font-size: 11px;
+            color: var(--text-main);
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin: 0 10px;
+        }
+
+        .field-edit-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            transition: transform 0.2s;
+        }
+
+        .field-edit-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .field-status {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+
+        .field-status.empty {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--border);
+        }
+
+        .field-status.filled {
+            background: var(--accent-green);
+            color: white;
+        }
+    </style>
+
+    <!-- JavaScript -->
     <script>
-        // Enhanced error handling und Recovery aus ai_studio_code
-        window.addEventListener('error', function(event) {
-            console.error('Global error:', event.error);
-            updateStatus('Fehler - Seite wird neu geladen...');
-            setTimeout(() => location.reload(), 3000);
-        });
-
-        window.addEventListener('unhandledrejection', function(event) {
-            console.error('Unhandled promise rejection:', event.reason);
-            event.preventDefault();
-        });
-
-        // Improved data validation
-        function validateData(data) {
-            if (!data || typeof data !== 'object') return false;
-            return Object.keys(data).length > 0;
-        }
-
-        // Better session management
-        const SESSION_KEY = 'finny_session';
-        
-        function saveSession(data) {
-            try {
-                sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
-            } catch (e) {
-                console.warn('Session storage unavailable');
-            }
-        }
-
-        function loadSession() {
-            try {
-                const data = sessionStorage.getItem(SESSION_KEY);
-                return data ? JSON.parse(data) : null;
-            } catch (e) {
-                console.warn('Could not load session');
-                return null;
-            }
-        }
-
-        function clearSession() {
-            try {
-                sessionStorage.removeItem(SESSION_KEY);
-            } catch (e) {
-                console.warn('Could not clear session');
-            }
-        }
-    </script>
-    <!-- ===== END AI STUDIO CODE ===== -->
-
-    <script>
-       const API_BASE = window.location.origin + '/api';
-       console.log('✅ FINNY v6.0 - API-URL:', API_BASE);
-        
+        // Globale Variablen
+        const API_BASE = window.location.origin + '/api';
         let currentSessionId = null;
         let currentFieldIndex = 0;
         let fields = [];
         let collectedData = {};
-        let conversationHistory = [];
+        let editingField = null;
 
         // DOM Elements
-        const fileUpload = document.getElementById('file-upload');
-        const fileInput = document.getElementById('file-input');
-        const chatMessages = document.getElementById('chat-messages');
-        const chatInput = document.getElementById('chat-input');
-        const sendButton = document.getElementById('send-button');
-        const checkButton = document.getElementById('check-button');
-        const previewButton = document.getElementById('preview-button');
-        const dataButton = document.getElementById('data-button');
-        const resetButton = document.getElementById('reset-button');
-        const downloadButton = document.getElementById('download-button');
-        const editSaveButton = document.getElementById('edit-save-button');
-        const confirmResetButton = document.getElementById('confirm-reset-button');
-        const editInput = document.getElementById('edit-input');
-        const statusText = document.getElementById('status-text');
-        const completedCount = document.getElementById('completed-count');
-        const totalCount = document.getElementById('total-count');
+        const elements = {
+            fileUpload: document.getElementById('file-upload'),
+            fileInput: document.getElementById('file-input'),
+            chatMessages: document.getElementById('chat-messages'),
+            chatInput: document.getElementById('chat-input'),
+            sendButton: document.getElementById('send-button'),
+            previewButton: document.getElementById('preview-button'),
+            skipButton: document.getElementById('skip-button'),
+            downloadButton: document.getElementById('download-button'),
+            resetButton: document.getElementById('reset-button'),
+            fieldsList: document.getElementById('fields-list'),
+            fieldProgress: document.getElementById('field-progress'),
+            completedCount: document.getElementById('completed-count'),
+            totalCount: document.getElementById('total-count'),
+            statusText: document.getElementById('status-text')
+        };
 
-        // Session Generation
+        // Session ID generieren
         function generateSessionId() {
             return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         }
 
+        // Feldliste rendern
+        function renderFieldsList() {
+            elements.fieldsList.innerHTML = '';
+            
+            fields.forEach((field, index) => {
+                const value = collectedData[field.fieldName] || '';
+                const isCompleted = !!value;
+                const isActive = index === currentFieldIndex;
+                
+                const fieldDiv = document.createElement('div');
+                fieldDiv.className = `field-item ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}`;
+                fieldDiv.onclick = () => jumpToField(index);
+                
+                fieldDiv.innerHTML = `
+                    <div class="field-status ${isCompleted ? 'filled' : 'empty'}">
+                        ${isCompleted ? '✓' : ''}
+                    </div>
+                    <div class="field-name" title="${field.fieldName}">
+                        ${field.fieldName}
+                    </div>
+                    ${value ? `<div class="field-value" title="${value}">${value}</div>` : ''}
+                    ${isCompleted ? `<button class="field-edit-btn" onclick="editField('${field.fieldName}', event)">✏️</button>` : ''}
+                `;
+                
+                elements.fieldsList.appendChild(fieldDiv);
+            });
+            
+            updateProgress();
+        }
+
+        // Fortschritt updaten
+        function updateProgress() {
+            const completed = Object.keys(collectedData).length;
+            const total = fields.length;
+            elements.fieldProgress.textContent = `${completed}/${total}`;
+            elements.completedCount.textContent = completed;
+            elements.totalCount.textContent = total;
+            
+            if (completed === total && total > 0) {
+                elements.statusText.textContent = 'Fertig!';
+                elements.downloadButton.disabled = false;
+            }
+        }
+
+        // Zu Feld springen
+        function jumpToField(index) {
+            if (index >= 0 && index < fields.length) {
+                currentFieldIndex = index;
+                renderFieldsList();
+                showField(fields[index]);
+            }
+        }
+
+        // Feld anzeigen
+        function showField(field) {
+            addMessage('assistant', `📝 **${field.fieldName}**\n\nBitte gib einen Wert ein oder schreibe "hilfe" für Unterstützung.`);
+            elements.chatInput.disabled = false;
+            elements.chatInput.focus();
+        }
+
+        // Feld bearbeiten
+        function editField(fieldName, event) {
+            event.stopPropagation();
+            editingField = fieldName;
+            document.getElementById('edit-field-name').textContent = fieldName;
+            document.getElementById('edit-input').value = collectedData[fieldName] || '';
+            document.getElementById('edit-modal').classList.add('active');
+            document.getElementById('edit-input').focus();
+        }
+
+        // Feld-Bearbeitung speichern
+        async function saveFieldEdit() {
+            const value = document.getElementById('edit-input').value.trim();
+            if (value && editingField) {
+                collectedData[editingField] = value;
+                
+                // Server updaten
+                await fetch(`${API_BASE}/update-field`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId: currentSessionId,
+                        fieldName: editingField,
+                        value: value
+                    })
+                });
+                
+                renderFieldsList();
+                addMessage('assistant', `✅ ${editingField} wurde aktualisiert: "${value}"`);
+                closeModal('edit-modal');
+            }
+        }
+
+        // Modal schließen
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Vorschau anzeigen
+        function showPreview() {
+            const tbody = document.getElementById('preview-table-body');
+            tbody.innerHTML = '';
+            
+            if (Object.keys(collectedData).length === 0) {
+                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--text-muted);">Noch keine Daten eingegeben</td></tr>';
+            } else {
+                Object.entries(collectedData).forEach(([field, value]) => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td style="color:var(--primary)">${field}</td>
+                        <td>${value || '<em style="color:var(--text-muted)">Leer</em>'}</td>
+                    `;
+                });
+            }
+            
+            document.getElementById('preview-modal').classList.add('active');
+        }
+
+        // Chat-Nachricht hinzufügen
+        function addMessage(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            // Markdown-ähnliche Formatierung
+            let formatted = content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+            
+            messageDiv.innerHTML = formatted;
+            elements.chatMessages.appendChild(messageDiv);
+            elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+        }
+
+        // Nachricht senden
+        async function sendMessage() {
+            const message = elements.chatInput.value.trim();
+            if (!message) return;
+            
+            addMessage('user', message);
+            elements.chatInput.value = '';
+            
+            try {
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId: currentSessionId,
+                        messages: [{ role: 'user', content: message }],
+                        currentFieldIndex: currentFieldIndex,
+                        collectedData: collectedData
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.response) {
+                    addMessage('assistant', data.response);
+                }
+                
+                // Aktion verarbeiten
+                if (data.action === 'field_saved' && data.collectedData) {
+                    const field = fields[currentFieldIndex];
+                    if (field) {
+                        collectedData[field.fieldName] = message;
+                        currentFieldIndex++;
+                        renderFieldsList();
+                        
+                        if (currentFieldIndex < fields.length) {
+                            setTimeout(() => showField(fields[currentFieldIndex]), 1000);
+                        } else {
+                            addMessage('assistant', '🎉 Alle Felder ausgefüllt! Du kannst jetzt das PDF herunterladen.');
+                            elements.chatInput.disabled = true;
+                        }
+                    }
+                } else if (data.action === 'next_field') {
+                    currentFieldIndex++;
+                    if (currentFieldIndex < fields.length) {
+                        showField(fields[currentFieldIndex]);
+                    }
+                    renderFieldsList();
+                }
+                
+            } catch (error) {
+                console.error('Chat error:', error);
+                addMessage('assistant', '❌ Verbindungsfehler. Bitte versuche es erneut.');
+            }
+        }
+
+        // PDF hochladen
+        async function handleFileUpload() {
+            const file = elements.fileInput.files[0];
+            if (!file) return;
+            
+            elements.statusText.textContent = 'Lädt PDF...';
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const uploadRes = await fetch(`${API_BASE}/upload-pdf`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const uploadData = await uploadRes.json();
+                if (!uploadData.success) throw new Error(uploadData.error);
+                
+                currentSessionId = generateSessionId();
+                
+                // Felder extrahieren
+                const extractRes = await fetch(`${API_BASE}/extract-fields`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        url: uploadData.url,
+                        sessionId: currentSessionId
+                    })
+                });
+                
+                const extractData = await extractRes.json();
+                if (!extractData.success) throw new Error(extractData.error);
+                
+                fields = extractData.fields;
+                collectedData = {};
+                currentFieldIndex = 0;
+                
+                renderFieldsList();
+                elements.statusText.textContent = 'PDF geladen';
+                
+                // Controls aktivieren
+                elements.chatInput.disabled = false;
+                elements.sendButton.disabled = false;
+                elements.previewButton.disabled = false;
+                elements.skipButton.disabled = false;
+                
+                addMessage('assistant', `✅ PDF geladen! Ich habe ${fields.length} Felder gefunden. Lass uns anfangen!`);
+                showField(fields[0]);
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                elements.statusText.textContent = 'Fehler';
+                addMessage('assistant', '❌ Fehler: ' + error.message);
+            }
+        }
+
+        // PDF herunterladen
+        async function downloadPDF() {
+            try {
+                elements.statusText.textContent = 'Erstellt PDF...';
+                
+                const response = await fetch(`${API_BASE}/fill-pdf`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        url: fields[0]?.pdfUrl,
+                        sessionId: currentSessionId
+                    })
+                });
+                
+                const data = await response.json();
+                if (!data.success) throw new Error(data.error);
+                
+                // Download
+                const link = document.createElement('a');
+                link.href = data.url;
+                link.download = 'ausgefuelltes_formular.pdf';
+                link.click();
+                
+                elements.statusText.textContent = 'PDF heruntergeladen';
+                addMessage('assistant', '✅ PDF wurde heruntergeladen!');
+                
+            } catch (error) {
+                console.error('Download error:', error);
+                elements.statusText.textContent = 'Download-Fehler';
+                addMessage('assistant', '❌ Fehler beim Download: ' + error.message);
+            }
+        }
+
         // Event Listeners
-        fileUpload.addEventListener('click', () => fileInput.click());
-        fileUpload.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            fileUpload.classList.add('active');
+        elements.fileUpload.addEventListener('click', () => elements.fileInput.click());
+        elements.fileInput.addEventListener('change', handleFileUpload);
+        elements.sendButton.addEventListener('click', sendMessage);
+        elements.chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
         });
-        fileUpload.addEventListener('dragleave', () => fileUpload.classList.remove('active'));
-        fileUpload.addEventListener('drop', (e) => {
+        elements.previewButton.addEventListener('click', showPreview);
+        elements.skipButton.addEventListener('click', () => {
+            currentFieldIndex++;
+            if (currentFieldIndex < fields.length) {
+                showField(fields[currentFieldIndex]);
+                renderFieldsList();
+            }
+        });
+        elements.downloadButton.addEventListener('click', downloadPDF);
+        elements.resetButton.addEventListener('click', () => {
+            if (confirm('Wirklich neu starten? Alle Daten gehen verloren!')) {
+                location.reload();
+            }
+        });
+
+        // Drag & Drop
+        elements.fileUpload.addEventListener('dragover', (e) => {
             e.preventDefault();
-            fileUpload.classList.remove('active');
+            elements.fileUpload.classList.add('active');
+        });
+        
+        elements.fileUpload.addEventListener('dragleave', () => {
+            elements.fileUpload.classList.remove('active');
+        });
+        
+        elements.fileUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            elements.fileUpload.classList.remove('active');
             if (e.dataTransfer.files.length > 0) {
-                fileInput.files = e.dataTransfer.files;
+                elements.fileInput.files = e.dataTransfer.files;
                 handleFileUpload();
             }
         });
 
-        fileInput.addEventListener('change', handleFileUpload);
-        sendButton.addEventListener('click', sendMessage);
-        chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-        checkButton.addEventListener('click', checkData);
-        previewButton.addEventListener('click', previewData);
-        dataButton.addEventListener('click', showDataModal);
-        resetButton.addEventListener('click', confirmReset);
-        downloadButton.addEventListener('click', downloadPDF);
-        editSaveButton.addEventListener('click', saveEdit);
-        confirmResetButton.addEventListener('click', performReset);
-
-        // File Upload Handler
-        async function handleFileUpload() {
-            const file = fileInput.files[0];
-            if (!file) return;
-
-            updateStatus('Lädt PDF...');
-            const formData = new FormData();
-            formData.append('file', file);
-
-            try {
-                const uploadResponse = await fetch('/api/upload-pdf', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const uploadData = await uploadResponse.json();
-                if (!uploadData.success) throw new Error(uploadData.error);
-
-                currentSessionId = generateSessionId();
-                await extractFields(uploadData.url);
-                updateStatus('PDF geladen - Bereit!');
-                enableControls();
-                addMessage('Finny', '✅ PDF erfolgreich geladen! Ich bin bereit, dich durch die Felder zu führen. Los geht\'s! 🚀');
-            } catch (error) {
-                console.error('Upload error:', error);
-                updateStatus('Fehler beim Upload');
-                addMessage('Finny', '❌ Fehler: ' + error.message);
-            }
+        // Live-Uhr
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clockTime').textContent = now.toLocaleTimeString('de-DE');
+            document.getElementById('clockDate').textContent = now.toLocaleDateString('de-DE');
         }
-
-        // Extract Fields
-        async function extractFields(pdfUrl) {
-            try {
-                const response = await fetch(`/api/extract-fields`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: pdfUrl, sessionId: currentSessionId })
-                });
-
-                const data = await response.json();
-                if (!data.success) throw new Error(data.error);
-
-                fields = data.fields;
-                // Server-Session mit Feldern updaten
-await fetch('/api/update-session', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        sessionId: currentSessionId,
-        fields: fields
-    })
-});
-                currentFieldIndex = 0;
-                collectedData = {};
-                totalCount.textContent = fields.length;
-                updateFieldCount();
-
-                if (fields.length > 0) {
-                    addMessage('Finny', `📋 Ich habe ${fields.length} Felder gefunden. Lass mich dir dabei helfen, sie auszufüllen!`);
-                    showNextField();
-                }
-            } catch (error) {
-                console.error('Extract error:', error);
-                addMessage('Finny', '❌ Fehler beim Extrahieren der Felder');
-            }
-        }
-
-        // Show Next Field
-        function showNextField() {
-    if (currentFieldIndex < fields.length) {
-        const field = fields[currentFieldIndex];
-        chatInput.disabled = false;
-        chatInput.focus();
-        
-        const fieldInfo = {
-            'Familienname': 'Gib deinen Nachnamen ein',
-            'Vorname': 'Gib deinen Vornamen ein',
-            'Geburtsdatum': 'Format: TT.MM.YYYY',
-            'E-Mail': 'Deine E-Mail-Adresse'
-        };
-        
-        const hint = fieldInfo[field.fieldName] || 'Bitte ausfüllen';
-        
-        addMessage('Finny', 
-            `📝 **Feld ${currentFieldIndex + 1}/${fields.length}**\n\n` +
-            `**${field.fieldName}**\n` +
-            `💡 ${hint}\n\n` +
-            `Befehle: "hilfe", "weiter", "zurück"`
-        );
-    } else {
-        chatInput.disabled = true;
-        addMessage('Finny', '🎉 **Geschafft!** Alle Felder ausgefüllt!\n\nKlicke auf "Daten & Download" um dein PDF herunterzuladen.');
-    }
-}
-
-        // Send Message
-        async function sendMessage() {
-    const userInput = chatInput.value.trim();
-    if (!userInput) return;
-    
-    addMessage('Du', userInput);
-    chatInput.value = '';
-    
-    conversationHistory.push({ role: 'user', content: userInput });
-    
-    // WICHTIG: Kontext mitschicken!
-    const payload = {
-        sessionId: currentSessionId,
-        messages: conversationHistory,
-        currentFieldIndex: currentFieldIndex,  // NEU!
-        collectedData: collectedData          // NEU!
-    };
-    
-    try {
-        const res = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        
-        const data = await res.json();
-        
-        // KI-Antwort anzeigen
-        addMessage('Finny', data.response);
-        conversationHistory.push({ role: 'assistant', content: data.response });
-        
-        // Aktionen verarbeiten
-        if (data.action === 'field_saved' || data.action === 'next_field') {
-            // Wert wurde gespeichert
-            if (data.collectedData) {
-                collectedData = data.collectedData;
-                updateFieldCount();
-            }
-            
-            // Zum nächsten Feld
-            if (data.nextFieldIndex !== undefined) {
-                currentFieldIndex = data.nextFieldIndex;
-                setTimeout(() => showNextField(), 1000);
-            }
-        }
-        
-    } catch(e) {
-        console.error('Chat error:', e);
-        addMessage('Finny', '❌ Netzwerkfehler');
-    }
-}
-
-        // Add Message to Chat
-        function addMessage(sender, text) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender === 'Finny' ? 'assistant' : 'user'}`;
-            messageDiv.innerHTML = sender === 'Finny' ? text : text;
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        // Update Status
-        function updateStatus(status) {
-            statusText.textContent = status;
-        }
-
-        // Update Field Count
-        function updateFieldCount() {
-            completedCount.textContent = Object.keys(collectedData).length;
-        }
-
-        // Enable/Disable Controls
-        function enableControls() {
-            chatInput.disabled = false;
-            sendButton.disabled = false;
-            checkButton.disabled = false;
-            previewButton.disabled = false;
-            dataButton.disabled = false;
-            resetButton.disabled = false;
-        }
-
-        // Check Data
-        function checkData() {
-            const completed = Object.keys(collectedData).length;
-            const total = fields.length;
-            const percent = Math.round((completed / total) * 100);
-            addMessage('Finny', `📊 Fortschritt: ${completed}/${total} Felder (${percent}%)`);
-        }
-
-        // Preview Data (Simplified version, showing only key info)
-        function previewData() {
-            const keys = Object.keys(collectedData);
-            if (keys.length === 0) {
-                addMessage('Finny', '📋 Noch keine Daten eingegeben.');
-                return;
-            }
-            const preview = keys.slice(0, 3).map(k => `${k}: ${collectedData[k]}`).join('\n');
-            addMessage('Finny', `📋 Vorschau:\n${preview}${keys.length > 3 ? '\n...' : ''}`);
-        }
-
-        // Show Data Modal
-        function showDataModal() {
-            const tbody = document.getElementById('data-table-body');
-            tbody.innerHTML = '';
-            Object.entries(collectedData).forEach(([field, value]) => {
-                const row = tbody.insertRow();
-                row.innerHTML = `<td>${field}</td><td>${value}</td>`;
-            });
-            document.getElementById('data-modal').classList.add('active');
-        }
-
-        // Download PDF
-        async function downloadPDF() {
-            try {
-                updateStatus('Lädt PDF...');
-                const response = await fetch('/api/fill-pdf', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: fields[0]?.pdfUrl, sessionId: currentSessionId })
-                });
-
-                const data = await response.json();
-                if (!data.success) throw new Error(data.error);
-
-                const link = document.createElement('a');
-                link.href = data.url;
-                link.download = 'filled_form.pdf';
-                link.click();
-                updateStatus('PDF heruntergeladen!');
-                addMessage('Finny', '✅ PDF erfolgreich heruntergeladen!');
-            } catch (error) {
-                console.error('Download error:', error);
-                updateStatus('Fehler beim Download');
-                addMessage('Finny', '❌ Fehler: ' + error.message);
-            }
-        }
-
-        // Confirm Reset
-        function confirmReset() {
-            document.getElementById('confirm-modal').classList.add('active');
-        }
-
-        // Perform Reset
-        function performReset() {
-            document.getElementById('confirm-modal').classList.remove('active');
-            clearSession();
-            location.reload();
-        }
-
-        // Save Edit
-        function saveEdit() {
-            const value = editInput.value.trim();
-            if (value) {
-                const field = fields[currentFieldIndex];
-                collectedData[field.fieldName] = value;
-                updateFieldCount();
-                document.getElementById('edit-modal').classList.remove('active');
-                addMessage('Finny', `✅ Feld aktualisiert: ${value}`);
-            }
-        }
-
-        // Initial Load
-        window.addEventListener('load', () => {
-            const session = loadSession();
-            if (session) {
-                currentFieldIndex = session.currentFieldIndex;
-                collectedData = session.collectedData;
-                fields = session.fields;
-                totalCount.textContent = fields.length;
-                updateFieldCount();
-                enableControls();
-            }
-        });
-        // Live-Uhr starten
-function updateClock() {
-    const now = new Date();
-    document.getElementById('clockTime').textContent =
-        now.toLocaleTimeString('de-DE', {hour12:false});
-    document.getElementById('clockDate').textContent =
-        now.toLocaleDateString('de-DE');
-}
-setInterval(updateClock, 1000);
-updateClock();
+        setInterval(updateClock, 1000);
+        updateClock();
     </script>
 </body>
 </html>
