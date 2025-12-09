@@ -864,6 +864,15 @@
                 if (!data.success) throw new Error(data.error);
 
                 fields = data.fields;
+                // Server-Session mit Feldern updaten
+await fetch('/api/update-session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        sessionId: currentSessionId,
+        fields: fields
+    })
+});
                 currentFieldIndex = 0;
                 collectedData = {};
                 totalCount.textContent = fields.length;
@@ -881,43 +890,81 @@
 
         // Show Next Field
         function showNextField() {
-            if (currentFieldIndex < fields.length) {
-                const field = fields[currentFieldIndex];
-                chatInput.disabled = false;
-                chatInput.focus();
-                addMessage('Finny', `**Feld ${currentFieldIndex + 1} von ${fields.length}:** ${field.fieldName}\n\n💡 *Gib einen Wert ein oder schreib "hilfe" für Tipps*`);
-                saveSession({ currentFieldIndex, collectedData, fields });
-            } else {
-                chatInput.disabled = true;
-                addMessage('Finny', '🎉 Alle Felder gefüllt! Jetzt kannst du die Daten speichern und das PDF herunterladen.');
-            }
-        }
+    if (currentFieldIndex < fields.length) {
+        const field = fields[currentFieldIndex];
+        chatInput.disabled = false;
+        chatInput.focus();
+        
+        const fieldInfo = {
+            'Familienname': 'Gib deinen Nachnamen ein',
+            'Vorname': 'Gib deinen Vornamen ein',
+            'Geburtsdatum': 'Format: TT.MM.YYYY',
+            'E-Mail': 'Deine E-Mail-Adresse'
+        };
+        
+        const hint = fieldInfo[field.fieldName] || 'Bitte ausfüllen';
+        
+        addMessage('Finny', 
+            `📝 **Feld ${currentFieldIndex + 1}/${fields.length}**\n\n` +
+            `**${field.fieldName}**\n` +
+            `💡 ${hint}\n\n` +
+            `Befehle: "hilfe", "weiter", "zurück"`
+        );
+    } else {
+        chatInput.disabled = true;
+        addMessage('Finny', '🎉 **Geschafft!** Alle Felder ausgefüllt!\n\nKlicke auf "Daten & Download" um dein PDF herunterzuladen.');
+    }
+}
 
         // Send Message
         async function sendMessage() {
     const userInput = chatInput.value.trim();
     if (!userInput) return;
+    
     addMessage('Du', userInput);
     chatInput.value = '';
-
-    conversationHistory.push({role:'user', content:userInput});
-
+    
+    conversationHistory.push({ role: 'user', content: userInput });
+    
+    // WICHTIG: Kontext mitschicken!
     const payload = {
-        sessionId: currentSessionId,   // <-- NEU
-        messages:  conversationHistory
+        sessionId: currentSessionId,
+        messages: conversationHistory,
+        currentFieldIndex: currentFieldIndex,  // NEU!
+        collectedData: collectedData          // NEU!
     };
-
+    
     try {
         const res = await fetch('/api/chat', {
-            method : 'POST',
-            headers: {'Content-Type':'application/json'},
-            body   : JSON.stringify(payload)
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
+        
         const data = await res.json();
+        
+        // KI-Antwort anzeigen
         addMessage('Finny', data.response);
-        conversationHistory.push({role:'assistant', content:data.response});
+        conversationHistory.push({ role: 'assistant', content: data.response });
+        
+        // Aktionen verarbeiten
+        if (data.action === 'field_saved' || data.action === 'next_field') {
+            // Wert wurde gespeichert
+            if (data.collectedData) {
+                collectedData = data.collectedData;
+                updateFieldCount();
+            }
+            
+            // Zum nächsten Feld
+            if (data.nextFieldIndex !== undefined) {
+                currentFieldIndex = data.nextFieldIndex;
+                setTimeout(() => showNextField(), 1000);
+            }
+        }
+        
     } catch(e) {
-        addMessage('Finny','❌ Netzwerk-Fehler');
+        console.error('Chat error:', e);
+        addMessage('Finny', '❌ Netzwerkfehler');
     }
 }
 
