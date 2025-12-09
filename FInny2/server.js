@@ -496,7 +496,8 @@ function findFieldByPartialName(partialName, fields) {
 // ============================================
 app.post('/api/chat', async (req, res) => {
   try {
-    const { sessionId, message } = req.body;
+    const { sessionId, messages } = req.body;
+    console.log('🔍 DEBUG /api/chat body:', req.body); 
     const session = sessions.get(sessionId);
 
     if (!session) {
@@ -504,10 +505,20 @@ app.post('/api/chat', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Session not found' });
     }
 
-    Logger.debug(`Chat [${sessionId}]: ${message.substring(0, 50)}...`);
+     const lastUserMsg = messages
+      .filter(m => m.role === 'user')
+      .pop()?.content || '';
 
+    if (!lastUserMsg) {
+      Logger.warn('CHAT', 'No user message in array');
+      return res.status(400).json({ success: false, error: 'No user message' });
+    }
+    /* ========================= */
+
+    Logger.debug(`Chat [${sessionId}]: ${lastUserMsg.substring(0, 50)}...`);
+    
     // Intent analysieren
-    const intent = analyzeIntent(message, session);
+    const intent = analyzeIntent(lastUserMsg, session);
     
     // Befehle behandeln
     if (intent.type === 'show_commands') {
