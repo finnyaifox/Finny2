@@ -767,6 +767,7 @@
         let currentFieldIndex = 0;
         let fields = [];
         let collectedData = {};
+        let conversationHistory = [];
 
         // DOM Elements
         const fileUpload = document.getElementById('file-upload');
@@ -830,7 +831,7 @@
             formData.append('file', file);
 
             try {
-                const uploadResponse = await fetch(`${API_BASE}/upload-pdf`, {
+                const uploadResponse = await fetch('/api/upload-pdf', {
                     method: 'POST',
                     body: formData
                 });
@@ -853,7 +854,7 @@
         // Extract Fields
         async function extractFields(pdfUrl) {
             try {
-                const response = await fetch(`${API_BASE}/extract-fields`, {
+                const response = await fetch(`/api/extract-fields`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: pdfUrl, sessionId: currentSessionId })
@@ -894,41 +895,25 @@
 
         // Send Message
         async function sendMessage() {
-            const message = chatInput.value.trim();
-            if (!message) return;
+    const userInput = chatInput.value.trim();
+    if (!userInput) return;
+    addMessage('Du', userInput);
+    chatInput.value = '';
 
-            addMessage('Du', message);
-            chatInput.value = '';
-
-            if (currentFieldIndex >= fields.length) return;
-
-            try {
-                const response = await fetch(`${API_BASE}/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sessionId: currentSessionId, message })
-                });
-
-                const data = await response.json();
-                if (!data.success) throw new Error(data.error);
-
-                addMessage('Finny', data.response);
-
-                if (data.action === 'saved') {
-                    const field = fields[currentFieldIndex];
-                    collectedData[field.fieldName] = data.cleanedValue || message;
-                    updateFieldCount();
-                    currentFieldIndex++;
-                    setTimeout(showNextField, 500);
-                } else if (data.action === 'skip') {
-                    currentFieldIndex++;
-                    setTimeout(showNextField, 500);
-                }
-            } catch (error) {
-                console.error('Chat error:', error);
-                addMessage('Finny', '❌ Fehler: ' + error.message);
-            }
-        }
+    conversationHistory.push({role:'user', content:userInput});
+    try {
+        const res = await fetch('/api/chat', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({messages: conversationHistory})
+        });
+        const data = await res.json();
+        addMessage('Finny', data.response);
+        conversationHistory.push({role:'assistant', content:data.response});
+    } catch(e) {
+        addMessage('Finny','❌ Netzwerk-Fehler');
+    }
+}
 
         // Add Message to Chat
         function addMessage(sender, text) {
@@ -993,7 +978,7 @@
         async function downloadPDF() {
             try {
                 updateStatus('Lädt PDF...');
-                const response = await fetch(`${API_BASE}/fill-pdf`, {
+                const response = await fetch('/api/fill-pdf', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: fields[0]?.pdfUrl, sessionId: currentSessionId })
@@ -1051,6 +1036,16 @@
                 enableControls();
             }
         });
+        // Live-Uhr starten
+function updateClock() {
+    const now = new Date();
+    document.getElementById('clockTime').textContent =
+        now.toLocaleTimeString('de-DE', {hour12:false});
+    document.getElementById('clockDate').textContent =
+        now.toLocaleDateString('de-DE');
+}
+setInterval(updateClock, 1000);
+updateClock();
     </script>
 </body>
 </html>
