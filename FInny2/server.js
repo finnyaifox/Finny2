@@ -8,11 +8,11 @@ const FormData = require('form-data');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // 🚀 COMET API MIT KIMI K2-THINKING MODEL
-const COMET_API_URL = 'https://api.cometapi.com/v1/chat/completions';
-const MODEL_NAME = "kimi-k2-thinking";
+const COMET_API_URL = 'https://api.cometapi.com/v1/messages';
+const MODEL_NAME = "claude-sonnet-4-5-20250929-thinking";
 
 // ============================================
 // 📋 ENHANCED LOGGING
@@ -42,7 +42,7 @@ const Logger = {
 // 📋 ENV & API KEYS
 // ============================================
 let PDF_CO_API_KEY = process.env.PDF_CO_API_KEY;
-let COMET_API_KEY = process.env.COMET_API_KEY;
+let COMET_API_KEY = process.env.COMETAPI_KEY;
 
 console.log('\n╔═══════════════════════════════════════════════════════════╗');
 console.log('║       🦊 FINNY v6.0 - Comet Kimi K2-Thinking Server       ║');
