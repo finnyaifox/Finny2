@@ -633,9 +633,9 @@ app.post('/api/chat', async (req, res) => {
     
     let session = sessions.get(sessionId);
     
-    // Session wiederherstellen falls nicht vorhanden
+    // ✅ SESSION RECOVERY (aus alter Version)
     if (!session) {
-      Logger.warn('CHAT', `Session ${sessionId} not found, creating new`);
+      Logger.warn('CHAT', `Session ${sessionId} nicht gefunden, erzeuge neue`);
       session = {
         sessionId,
         fields: [],
@@ -646,103 +646,252 @@ app.post('/api/chat', async (req, res) => {
       sessions.set(sessionId, session);
     }
     
-    // Client-Daten synchronisieren
+    // ✅ CLIENT SYNC (aus neuer Version)
     if (clientFieldIndex !== undefined) session.currentFieldIndex = clientFieldIndex;
     if (clientData) session.collectedData = { ...session.collectedData, ...clientData };
     
     const lastUserMsg = messages?.filter(m => m.role === 'user').pop()?.content || '';
-    if (!lastUserMsg) {
-      return res.status(400).json({ success: false, error: 'No user message' });
+    const lowerMsg = lastUserMsg.toLowerCase().trim();
+    
+    const field = session.fields[session.currentFieldIndex];
+    if (!field) {
+      return res.json({
+        success: true,
+        response: '✅ Alle Felder wurden bearbeitet!',
+        action: 'completed'
+      });
     }
     
-    Logger.info('CHAT', `Processing: "${lastUserMsg}" for field ${session.currentFieldIndex}`);
+    // ✅ ERWEITERTE BEFEHLE (aus neuer Version)
     
-    // Intent analysieren
-    const intent = analyzeIntent(lastUserMsg, session);
+    // LÖSCHEN
+    if (['löschen', 'clear', 'entfernen', 'reset'].includes(lowerMsg)) {
+      delete session.collectedData[field.fieldName];
+      Logger.info('CHAT', `Feld ${field.fieldName} gelöscht`);
+      return res.json({
+        success: true,
+        response: `🗑️ Feld "${field.fieldName}" wurde geleert.`,
+        action: 'field_cleared'
+      });
+    }
     
-    // Spezial-Befehle behandeln
-    if (intent.type === 'skip') {
+    // ÜBERSPRINGEN
+    if (['weiter', 'skip', 'überspringen', 'next'].includes(lowerMsg)) {
+      session.collectedData[field.fieldName] = '';
       session.currentFieldIndex++;
+      Logger.info('CHAT', `Feld ${field.fieldName} übersprungen`);
       return res.json({
         success: true,
         response: '⏭️ Feld übersprungen.',
-        action: 'next_field',
+        action: 'skip',
         nextFieldIndex: session.currentFieldIndex
       });
     }
     
-    // Normale Eingabe = Wert speichern
-    if (intent.type === 'input' && session.fields[session.currentFieldIndex]) {
-      const field = session.fields[session.currentFieldIndex];
-      
-      // Wert speichern
-      session.collectedData[field.fieldName] = intent.value;
-      session.currentFieldIndex++;
-      
-      // KI-Antwort generieren
-      let aiResponse = `✅ "${intent.value}" für **${field.fieldName}** gespeichert!`;
-      
-      if (cometApiActive && COMET_API_KEY && !COMET_API_KEY.includes('DEMO')) {
-        try {
-          const nextField = session.fields[session.currentFieldIndex];
-          const systemPrompt = `Du bist Finny, ein freundlicher PDF-Assistent.
-Der Nutzer hat gerade "${intent.value}" für das Feld "${field.fieldName}" eingegeben.
-
-${nextField ? `Das nächste Feld ist: "${nextField.fieldName}"` : 'Alle Felder sind ausgefüllt!'}
-
-Antworte kurz und freundlich auf Deutsch. Bestätige die Eingabe und leite zum nächsten Feld über.`;
-
-          const aiRes = await axios.post(
-            'https://api.cometapi.com/v1/chat/completions',
-            {
-              model: MODEL_NAME,
-              messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: lastUserMsg }
-              ],
-              temperature: 0.7,
-              max_tokens: 200
-            },
-            {
-              headers: {
-                'Authorization': `Bearer ${COMET_API_KEY}`,
-                'Content-Type': 'application/json'
-              },
-              timeout: 10000
-            }
-          );
-          
-          aiResponse = aiRes.data.choices?.[0]?.message?.content || aiResponse;
-        } catch (err) {
-          Logger.warn('COMET', 'AI failed, using fallback', err);
-        }
+    // ZURÜCK
+    if (['zurück', 'back', 'vorheriges', 'previous'].includes(lowerMsg)) {
+      if (session.currentFieldIndex > 0) {
+        session.currentFieldIndex--;
+        const prevField = session.fields[session.currentFieldIndex];
+        Logger.info('CHAT', `Zurück zu Feld ${prevField.fieldName}`);
+        return res.json({
+          success: true,
+          response: `↩️ Zurück zu: **${prevField.fieldName}**`,
+          action: 'back',
+          nextFieldIndex: session.currentFieldIndex
+        });
       }
+    }
+    
+    // STATUS
+    if (['status', 'fortschritt', 'progress'].includes(lowerMsg)) {
+      const completed = Object.keys(session.collectedData).length;
+      const total = session.fields.length;
+      const percent = Math.round((completed / total) * 100);
+      
+      let statusText = `📊 **Fortschritt: ${completed}/${total} Felder (${percent}%)**\n\n`;
+      statusText += `Aktuelles Feld: **${field.fieldName}**\n`;
       
       return res.json({
         success: true,
-        response: aiResponse,
-        action: 'field_saved',
-        nextFieldIndex: session.currentFieldIndex,
-        collectedData: session.collectedData
+        response: statusText,
+        isCommand: true
       });
     }
     
-    // Hilfe-Anfrage mit KI
-    if (intent.type === 'help' && session.fields[session.currentFieldIndex]) {
-      const field = session.fields[session.currentFieldIndex];
-      const fieldInfo = FIELD_HINTS[field.fieldName] || {};
+    // HILFE
+    if (['hilfe', 'help', '?', 'was'].includes(lowerMsg)) {
+      const fieldType = analyzeFieldType(field.fieldName);
+      const fieldHint = FIELD_HINTS[field.fieldName] || {};
       
+      let helpText = `💡 **Ausführliche Hilfe für: ${field.fieldName}**\n\n`;
+      helpText += `**Feldtyp:** ${fieldType.type}\n`;
+      helpText += `**Anleitung:** ${fieldType.instruction}\n`;
+      helpText += `**Beispiel:** ${fieldType.example}\n\n`;
+      
+      if (fieldHint.hint) {
+        helpText += `**Zusatzinfo:** ${fieldHint.hint}\n\n`;
+      }
+      
+      helpText += `**🛠️ Verfügbare Befehle:**\n`;
+      helpText += `• "löschen" - Feld leeren\n`;
+      helpText += `• "weiter" - Überspringen\n`;
+      helpText += `• "zurück" - Vorheriges Feld\n`;
+      helpText += `• "status" - Fortschritt anzeigen`;
+      
+      Logger.info('CHAT', `Hilfe angezeigt für ${field.fieldName}`);
       return res.json({
         success: true,
-        response: `💡 **${field.fieldName}**\n\n${fieldInfo.hint || 'Bitte einen Wert eingeben'}\n\nBeispiel: ${fieldInfo.example || 'Text eingeben'}`,
+        response: helpText,
         isHelp: true
       });
     }
     
-    // Fallback
+    // CHECKBOX-FELDER
+    const fieldType = analyzeFieldType(field.fieldName);
+    if (fieldType.type === 'checkbox') {
+      if (['x', 'ja', 'ankreuzen', 'ja bitte'].includes(lowerMsg)) {
+        session.collectedData[field.fieldName] = 'X';
+        session.currentFieldIndex++;
+        Logger.info('CHAT', `Checkbox ${field.fieldName} angekreuzt`);
+        return res.json({
+          success: true,
+          response: '✅ Angekreuzt mit "X"',
+          action: 'field_saved',
+          nextFieldIndex: session.currentFieldIndex
+        });
+      } else if (['nein', 'leer', 'nicht an', 'nein danke'].includes(lowerMsg)) {
+        session.collectedData[field.fieldName] = '';
+        session.currentFieldIndex++;
+        Logger.info('CHAT', `Checkbox ${field.fieldName} nicht angekreuzt`);
+        return res.json({
+          success: true,
+          response: '⭕ Nicht angekreuzt (leer gelassen)',
+          action: 'field_saved',
+          nextFieldIndex: session.currentFieldIndex
+        });
+      }
+    }
+    
+    // NORMALE EINGABE speichern
+    if (lastUserMsg.length > 0) {
+      session.collectedData[field.fieldName] = lastUserMsg;
+      const currentIndex = session.currentFieldIndex;
+      session.currentFieldIndex++;
+      
+      // INTELLIGENTE KI-ANTWORT
+      let aiResponse = '';
+      const nextField = session.fields[session.currentFieldIndex];
+      
+      // 🧠 AUSFÜHRLICHER, INTELLIGENTER SYSTEM PROMPT
+      const systemPrompt = `Du bist Finny, ein hochintelligenter und freundlicher PDF-Assistent mit Persönlichkeit. Deine Aufgabe ist es, Nutzern beim Ausfüllen von PDF-Formularen zu helfen - aber nicht wie ein roboterhafter Formularassistent, sondern wie ein kompetenter, einfühlsamer Mensch, der den Kontext versteht.
+
+### **PERSÖNLICHKEIT & TONFALL**
+- Sei freundlich, aber professionell - wie ein guter Kollege oder Berater
+- Verwende gelegentlich Emojis, aber nicht übertrieben (max 2-3 pro Nachricht)
+- Spreche den Nutzer direkt an ("du", "deine")
+- Zeige echtes Interesse: "Ah, spannend!", "Verstehe!", "Super!"
+- Feiere Erfolge: "Perfekt!", "Genau so!", "Toll gemacht!"
+
+### **KONTEXTBEWUSSTSEIN**
+- Analysiere das aktuelle Feld und das Vorherige
+- Wenn jemand "Berlin" als Ort eingibt, sag: "Ah, aus der Hauptstadt! 🏛️"
+- Bei Firmennamen: "Gute Wahl, XYZ ist ein renommierter Arbeitgeber!"
+- Bei Geburtsdatum: Erkenne das Alter und passe deine Sprache an
+
+### **INTELLIGENTE BEGLEITUNG NACH FORTSCHRITT**
+- **STAGE 1 (Felder 1-3):** Sei sehr einladend und erklärend: "Lass uns starten! Das erste Feld ist..."
+- **STAGE 2 (Felder 4-8):** Sei motivierend: "Super Fortschritt! Weiter so..."
+- **STAGE 3 (Felder 9-15):** Bleib enthusiastisch: "Fast geschafft! Noch ein paar Felder..."
+- **STAGE 4 (Letzte 3 Felder):** Werde emotional: "Du bist so nah dran! 💪"
+- **STAGE 5 (Abgeschlossen):** FEIERE: "🎉 **WOW!** Du hast es geschafft! Du bist ein absoluter Profi!"
+
+### **VALIDIERUNG & INTELLIGENZ**
+- Bei ungewöhnlichen Eingaben gib freundliche Hinweise
+- Bei E-Mail: "Gute Wahl, die .de-Domain ist zuverlässig!"
+- Bei Telefonnummern: "Deutschland-Prefix +49 erkannt - perfekt!"
+- Erkenne Muster: "Ah, eine Postleitzahl aus Bayern - schöne Gegend!"
+
+### **SPRACHQUALITÄT**
+- Formuliere flüssig und natürlich
+- Vermeide Wiederholungen
+- Nutze Synonyme: "Gespeichert!", "Notiert!", "Habe ich!", "Verstanden!"
+
+### **AKTUELLER KONTEXT:**
+- **Gerade gespeichertes Feld**: "${field.fieldName}" = "${lastUserMsg}"
+- **Nächstes Feld**: "${nextField ? nextField.fieldName : 'Letztes Feld erreicht'}"
+- **Fortschritt**: ${currentIndex + 1} von ${session.fields.length} Feldern
+- **User Input**: "${lastUserMsg}"
+
+### **DEINE ANTWORT SOLL:**
+1. Die Eingabe bestätigen (kurz & persönlich, 1 Satz)
+2. Zum nächsten Feld überleiten (natürlich, nicht abrupt, 1-2 Sätze)
+3. Falls letztes Feld, begeistert abschließen (2-3 Sätze mit Emotion)
+4. Falls letztes Feld ERREICHT, NICHT "Nächstes Feld" erwähnen, sondern FEIERN!
+5. Maximal 3-4 Sätze, aber flüssig formuliert
+6. NIE "Nächstes Feld: null" oder ähnliches sagen
+7. IMMER positiv und motivierend bleiben!`;
+
+// Logging für Debugging
+Logger.info('CHAT', `Generiere KI-Antwort für Feld ${field.fieldName} mit System Prompt Länge: ${systemPrompt.length}`);
+
+      const aiRes = await axios.post(
+        'https://api.cometapi.com/v1/chat/completions',
+        {
+          model: MODEL_NAME,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: lastUserMsg }
+          ],
+          temperature: 0.75, // Ausgewogen zwischen kreativ und präzise
+          max_tokens: 300,
+          top_p: 0.9
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${COMET_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 15000 // Längeres Timeout für komplexere Prompts
+        }
+      );
+      
+      aiResponse = aiRes.data.choices?.[0]?.message?.content || `✅ "${lastUserMsg}" gespeichert!`;
+      Logger.success('CHAT', `KI-Antwort erfolgreich generiert`);
+      
+    } catch (err) {
+      Logger.warn('COMET', 'AI fehlgeschlagen, Fallback verwendet', err);
+      // Intelligenter Fallback
+      aiResponse = `✅ "${lastUserMsg}" für **${field.fieldName}** gespeichert!`;
+      
+      const nextField = session.fields[session.currentFieldIndex];
+      if (nextField) {
+        const remaining = session.fields.length - session.currentFieldIndex;
+        if (remaining <= 3) {
+          aiResponse += `\n\n🎉 Fast geschafft! Nur noch ${remaining} Feld${remaining > 1 ? 'er' : ''}. Du schaffst das!`;
+        } else {
+          aiResponse += `\n\nNächstes Feld: **${nextField.fieldName}**. Weiter so!`;
+        }
+      } else {
+        aiResponse += '\n\n🎊 **Herzlichen Glückwunsch!** Alle Felder sind ausgefüllt. Du kannst das PDF jetzt herunterladen!';
+      }
+    }
+    
+    Logger.info('CHAT', `Feld ${field.fieldName} gespeichert, Index: ${session.currentFieldIndex}`);
     return res.json({
       success: true,
-      response: 'Ich verstehe dich nicht. Gib einen Wert ein oder schreibe "hilfe".',
+      response: aiResponse,
+      action: 'field_saved',
+      nextFieldIndex: session.currentFieldIndex,
+      collectedData: session.collectedData
+    });
+  }
+    
+    // Fallback
+    Logger.info('CHAT', 'Keine Aktion erkannt, Standardantwort');
+    return res.json({
+      success: true,
+      response: 'Bitte gib einen Wert ein oder nutze "hilfe" für Unterstützung.',
       isCommand: true
     });
     
@@ -751,8 +900,6 @@ Antworte kurz und freundlich auf Deutsch. Bestätige die Eingabe und leite zum n
     res.status(500).json({ success: false, error: err.message });
   }
 });
-
-
 
 Logger.debug('✓ Chat endpoint registered');
 
