@@ -395,6 +395,20 @@ app.post('/api/extract-fields', async (req, res) => {
 
 Logger.debug('✓ Extract endpoint registered');
 
+// 🔄 UPDATE SESSION
+// ============================================
+app.post('/api/update-session', (req, res) => {
+    const { sessionId, fields } = req.body;
+    const session = sessions.get(sessionId);
+    if (session) {
+        session.fields = fields;
+        Logger.info('SESSION', `Updated session ${sessionId} with ${fields.length} fields`);
+    }
+    res.json({ success: true });
+});
+
+Logger.debug('✓ Update session endpoint registered');
+
 // ============================================
 // 🧠 INTELLIGENTE HELPER FUNKTIONEN
 // ============================================
