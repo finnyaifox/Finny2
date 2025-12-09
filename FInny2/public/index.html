@@ -6,7 +6,6 @@
     <title>Finny - AI PDF Assistent</title>
     <style>
         :root {
-            /* DARK ORANGE THEME - ALLE VARIABLIERN AUS DER ALTEN HTML */
             --bg-dark: #1a0f05;
             --bg-panel: #2d1810;
             --bg-darker: #140a03;
@@ -35,659 +34,132 @@
             color: var(--text-main);
             height: 100vh;
             display: flex;
+            flex-direction: column;
             overflow: hidden;
-            position: relative;
         }
 
-        /* ANIMATED CLOCK - AUS ALTEM DESIGN */
-        .live-clock {
-            position: fixed;
-            top: 15px;
-            right: 20px;
-            background: linear-gradient(145deg, var(--bg-panel), var(--bg-darker));
-            border: 2px solid var(--primary);
-            border-radius: 15px;
-            padding: 10px 18px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 20px var(--primary-glow);
-            z-index: 100;
-            animation: clockPulse 2s ease-in-out infinite;
+        /* HEADER MIT LOGO */
+        .header-top {
+            background: linear-gradient(180deg, var(--bg-panel), var(--bg-darker));
+            border-bottom: 2px solid var(--primary);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
 
-        @keyframes clockPulse {
-            0%, 100% { box-shadow: 0 4px 20px var(--primary-glow); }
-            50% { box-shadow: 0 4px 30px var(--primary-glow), 0 0 15px var(--primary); }
-        }
-
-        .clock-icon {
-            width: 32px;
-            height: 32px;
-            border: 3px solid var(--primary);
-            border-radius: 50%;
-            position: relative;
-            animation: clockRotate 20s linear infinite;
-        }
-
-        @keyframes clockRotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .clock-icon::before {
-            content: '';
-            position: absolute;
-            width: 2px;
-            height: 11px;
-            background: var(--primary);
-            top: 2px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-radius: 1px;
-        }
-
-        .clock-icon::after {
-            content: '';
-            position: absolute;
-            width: 2px;
-            height: 7px;
-            background: var(--accent-green);
-            top: 6px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-radius: 1px;
-        }
-
-        .clock-display {
+        .logo-container {
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            align-items: center;
+            gap: 10px;
         }
 
-        .clock-time {
-            font-size: 16px;
-            font-weight: bold;
+        .logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            box-shadow: 0 0 30px var(--primary-glow);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .logo-text {
             color: var(--primary);
-            font-family: 'Courier New', monospace;
-            letter-spacing: 1.5px;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 0 0 20px var(--primary-glow);
         }
 
-        .clock-date {
-            font-size: 9px;
-            color: var(--text-muted);
-        }
-
-        /* CONTAINER & PANELS - DARK THEME */
-        .container {
+        /* CONTAINER */
+        .main-container {
             display: flex;
-            width: 100%;
-            height: 100vh;
+            flex: 1;
             gap: 20px;
             padding: 15px;
+            overflow: hidden;
         }
 
         .left-panel {
-            width: 300px;
-            background: linear-gradient(180deg, var(--bg-panel) 0%, var(--bg-darker) 100%);
-            border: 1px solid var(--border);
-            border-radius: 16px;
+            width: 320px;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,126,33,0.1);
+            gap: 15px;
         }
 
         .right-panel {
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 15px;
         }
 
-        /* HEADER - DARK THEME */
-        .header {
-            background: linear-gradient(180deg, var(--bg-panel) 0%, var(--bg-darker) 100%);
+        /* PROGRESS BAR */
+        .progress-container {
+            background: var(--bg-panel);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 14px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
-        .header-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .progress-label {
             color: var(--primary);
-            font-weight: bold;
-            text-shadow: 0 0 20px var(--primary-glow);
-        }
-
-        .header-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        /* SECTIONS - DARK THEME */
-        .section {
-            padding: 14px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .section-title {
-            color: var(--primary);
-            font-weight: bold;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
             font-size: 14px;
+            margin-bottom: 10px;
+            font-weight: bold;
         }
 
-        /* STATUS BOX - DARK THEME */
-        .status-box {
-            background: rgba(0,0,0,0.2);
-            border: 1px solid var(--border);
+        .progress-bar {
+            background: rgba(0,0,0,0.3);
+            height: 25px;
             border-radius: 12px;
-            padding: 12px;
-        }
-
-        .status-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 13px;
-            margin-bottom: 8px;
-            color: var(--text-muted);
-        }
-
-        .status-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .status-value {
-            color: var(--text-main);
-            font-weight: 600;
-        }
-
-        /* FILE UPLOAD - DARK THEME */
-        .file-upload {
-            background: rgba(0,0,0,0.2);
-            border: 2px dashed var(--border);
-            border-radius: 12px;
-            padding: 25px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .file-upload:hover {
-            border-color: var(--primary);
-            background: rgba(255,126,33,0.08);
-            box-shadow: 0 0 20px var(--primary-glow);
-        }
-
-        .file-upload.active {
-            border-color: var(--accent-green);
-            background: rgba(46, 204, 113, 0.08);
-        }
-
-        .file-upload-icon {
-            font-size: 32px;
-            margin-bottom: 8px;
-            color: var(--primary);
-        }
-
-        .file-upload-text {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        /* CHAT CONTAINER - DARK THEME */
-        .chat-container {
-            flex: 1;
-            background: linear-gradient(180deg, var(--bg-panel) 0%, var(--bg-darker) 100%);
-            border: 1px solid var(--border);
-            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 16px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            background: rgba(0,0,0,0.15);
-        }
-
-        .chat-messages::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .chat-messages::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 3px;
-        }
-
-        .message {
-            max-width: 90%;
-            padding: 12px 16px;
-            border-radius: 16px;
-            line-height: 1.5;
-            font-size: 14px;
-            animation: popIn 0.3s ease;
-            word-wrap: break-word;
-        }
-
-        .message.assistant {
-            background: linear-gradient(145deg, #3d2518, #2a1810);
-            border-bottom-left-radius: 4px;
             border: 1px solid var(--border);
-            color: #f0e6dc;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            align-self: flex-start;
         }
 
-        .message.assistant::before {
-            content: '🦊 ';
-        }
-
-        .message.user {
-            background: linear-gradient(145deg, var(--accent-green), var(--accent-green-hover));
-            color: #000;
-            font-weight: 500;
-            align-self: flex-end;
-            border-bottom-right-radius: 4px;
-            box-shadow: 0 4px 20px var(--accent-green-glow);
-        }
-
-        /* CHAT INPUT - DARK THEME */
-        .chat-input-area {
-            padding: 14px;
-            background: var(--bg-darker);
-            border-top: 1px solid var(--border);
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-green), var(--primary));
+            transition: width 0.5s ease;
             display: flex;
-            gap: 10px;
-        }
-
-        .chat-input {
-            flex: 1;
-            background: rgba(255,255,255,0.05);
-            border: 2px solid var(--border);
-            padding: 11px 16px;
-            border-radius: 20px;
+            align-items: center;
+            justify-content: center;
             color: white;
-            font-size: 14px;
-            transition: 0.3s;
-        }
-
-        .chat-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 15px var(--primary-glow);
-        }
-
-        .chat-input::placeholder {
-            color: var(--text-muted);
-        }
-
-        .chat-button {
-            background: linear-gradient(145deg, var(--accent-green), var(--accent-green-hover));
-            color: #000;
-            border: none;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 18px;
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            transition: 0.3s;
-            box-shadow: 0 4px 15px var(--accent-green-glow);
-            flex-shrink: 0;
             font-weight: bold;
+            font-size: 12px;
+            box-shadow: 0 0 20px var(--accent-green-glow);
         }
 
-        .chat-button:hover { 
-            transform: scale(1.1); 
-            box-shadow: 0 6px 25px var(--accent-green-glow);
-        }
-
-        .chat-button:active {
-            transform: scale(0.95);
-        }
-
-        .chat-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* ACTION BUTTONS - DARK THEME */
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            padding: 14px;
-            background: var(--bg-darker);
-            border-top: 1px solid var(--border);
-        }
-
-        .btn {
+        /* FELDLISTE */
+        .fields-container {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
             flex: 1;
-            min-width: 100px;
-            padding: 10px 16px;
-            border: none;
-            border-radius: 14px;
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn-primary { 
-            background: linear-gradient(145deg, var(--accent-green), var(--accent-green-hover)); 
-            color: #000;
-            box-shadow: 0 4px 15px var(--accent-green-glow);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px var(--accent-green-glow);
-        }
-
-        .btn-secondary { 
-            background: transparent; 
-            border: 1px solid var(--border); 
-            color: var(--text-muted);
-        }
-
-        .btn-secondary:hover {
-            border-color: var(--primary);
-            color: var(--text-main);
-            background: linear-gradient(145deg, #3d2518, var(--bg-panel));
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(255,126,33,0.2);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* MODALS - DARK THEME */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(8px);
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: linear-gradient(180deg, var(--bg-panel), var(--bg-darker));
-            border: 2px solid var(--primary);
-            border-radius: 16px;
-            padding: 0;
-            max-width: 650px;
-            max-height: 85vh;
+            flex-direction: column;
             overflow: hidden;
-            box-shadow: 0 0 60px var(--primary-glow);
-            animation: modalSlide 0.3s ease;
-            width: 90%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
-        @keyframes modalSlide {
-            from { transform: translateY(-30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .modal-header { 
-            padding: 18px 22px; 
-            border-bottom: 1px solid var(--border); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            background: rgba(255,126,33,0.05);
+        .fields-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
             color: var(--primary);
             font-weight: bold;
-            font-size: 18px;
+            font-size: 14px;
         }
 
-        .modal-body { 
-            padding: 20px; 
+        .fields-list {
+            flex: 1;
             overflow-y: auto;
-            max-height: 60vh;
+            padding: 10px;
         }
 
-        .modal-footer { 
-            padding: 16px 20px; 
-            border-top: 1px solid var(--border); 
-            display: flex; 
-            gap: 10px; 
-            justify-content: flex-end;
-            background: rgba(0,0,0,0.2);
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-
-        .data-table th {
-            color: var(--primary);
-            background: rgba(255,126,33,0.1);
-            font-weight: 600;
-            padding: 10px 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .data-table td {
-            padding: 10px 12px;
-            border-bottom: 1px solid var(--border);
-            color: var(--text-main);
-        }
-
-        .data-table tr:hover {
-            background: rgba(255,255,255,0.03);
-        }
-
-        /* ANIMATIONS */
-        @keyframes popIn { 
-            from { opacity: 0; transform: scale(0.9); } 
-            to { opacity: 1; transform: scale(1); } 
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
-        /* RESPONSIVE */
-        @media (max-width: 600px) {
-    .live-clock {
-        top: 10px;
-        right: 10px;
-        padding: 8px 12px;
-        font-size: 12px;
-    }
-    .clock-icon {
-        width: 24px;
-        height: 24px;
-    }
-    .header {
-        flex-direction: column;
-        gap: 10px;
-        align-items: flex-start;
-    }
-    .btn {
-        font-size: 12px;
-        padding: 8px 12px;
-    }
-}
-    </style>
-</head>
-<body>
-    <!-- ANIMIERTE UHR -->
-    <div class="live-clock">
-        <div class="clock-icon"></div>
-        <div class="clock-display">
-            <div class="clock-time" id="clockTime">00:00:00</div>
-            <div class="clock-date" id="clockDate">Laden...</div>
-        </div>
-    </div>
-
-    <div class="container">
-        <!-- Linkes Panel mit Feldliste -->
-        <div class="left-panel">
-            <!-- Feldliste Section -->
-            <div class="section" style="flex: 1; overflow-y: auto;">
-                <div class="section-title">
-                    📋 Formularfelder (<span id="field-progress">0/0</span>)
-                </div>
-                <div id="fields-list" style="padding: 10px;">
-                    <!-- Wird dynamisch gefüllt -->
-                </div>
-            </div>
-
-            <!-- Status Section -->
-            <div class="section">
-                <div class="section-title">📊 Status</div>
-                <div class="status-box">
-                    <div class="status-row">
-                        <span>Status:</span>
-                        <span class="status-value" id="status-text">Bereit</span>
-                    </div>
-                    <div class="status-row">
-                        <span>Fortschritt:</span>
-                        <span class="status-value">
-                            <span id="completed-count">0</span>/<span id="total-count">0</span>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Upload Section -->
-            <div class="section">
-                <div class="section-title">📤 PDF hochladen</div>
-                <div class="file-upload" id="file-upload">
-                    <div class="file-upload-icon">📄</div>
-                    <div class="file-upload-text">Klicken oder ziehen</div>
-                    <input type="file" id="file-input" accept=".pdf" style="display: none;">
-                </div>
-            </div>
-        </div>
-
-        <!-- Rechtes Panel -->
-        <div class="right-panel">
-            <div class="header">
-                <div class="header-title">💬 Chat mit Finny</div>
-                <div class="header-status">
-                    <span id="ai-status">🟢 KI bereit</span>
-                </div>
-            </div>
-
-            <div class="chat-container">
-                <div class="chat-messages" id="chat-messages">
-                    <div class="message assistant">
-                        Willkommen! 👋 Ich bin Finny, dein KI-Assistent. Lade ein PDF hoch und ich helfe dir beim Ausfüllen!
-                    </div>
-                </div>
-                <div class="chat-input-area">
-                    <input type="text" class="chat-input" id="chat-input" 
-                           placeholder="Schreibe eine Nachricht..." disabled>
-                    <button class="chat-button" id="send-button" disabled>➤</button>
-                </div>
-            </div>
-
-            <div class="action-buttons">
-                <button class="btn btn-primary" id="preview-button" disabled>
-                    👁️ Vorschau
-                </button>
-                <button class="btn btn-secondary" id="skip-button" disabled>
-                    ⏭️ Überspringen
-                </button>
-                <button class="btn btn-secondary" id="download-button" disabled>
-                    📥 Download PDF
-                </button>
-                <button class="btn btn-secondary" id="reset-button">
-                    🔄 Neu starten
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Vorschau Modal -->
-    <div class="modal" id="preview-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span>📋 Aktuelle Eingaben</span>
-                <button onclick="closeModal('preview-modal')" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;">✕</button>
-            </div>
-            <div class="modal-body">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Feldname</th>
-                            <th>Eingegebener Wert</th>
-                        </tr>
-                    </thead>
-                    <tbody id="preview-table-body"></tbody>
-                </table>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('preview-modal')">Schließen</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Feld bearbeiten Modal -->
-    <div class="modal" id="edit-modal">
-        <div class="modal-content" style="max-width: 400px;">
-            <div class="modal-header">
-                <span>✏️ Feld bearbeiten</span>
-                <button onclick="closeModal('edit-modal')" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;">✕</button>
-            </div>
-            <div class="modal-body">
-                <p id="edit-field-name" style="color: var(--primary); margin-bottom: 10px;"></p>
-                <input type="text" id="edit-input" class="chat-input" style="width: 100%;">
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('edit-modal')">Abbrechen</button>
-                <button class="btn btn-primary" onclick="saveFieldEdit()">💾 Speichern</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- CSS Ergänzungen -->
-    <style>
-        /* Feldliste Styles */
         .field-item {
             padding: 10px;
             margin: 5px 0;
@@ -695,8 +167,8 @@
             border: 1px solid var(--border);
             background: rgba(0,0,0,0.2);
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 10px;
             transition: all 0.3s;
             cursor: pointer;
         }
@@ -717,53 +189,15 @@
             box-shadow: 0 0 10px var(--primary-glow);
         }
 
-        .field-name {
-            flex: 1;
-            font-size: 12px;
-            color: var(--text-muted);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .field-item.completed .field-name {
-            color: var(--accent-green);
-            text-decoration: line-through;
-        }
-
-        .field-value {
-            font-size: 11px;
-            color: var(--text-main);
-            max-width: 100px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            margin: 0 10px;
-        }
-
-        .field-edit-btn {
-            background: none;
-            border: none;
-            color: var(--primary);
-            cursor: pointer;
-            font-size: 16px;
-            padding: 4px;
-            transition: transform 0.2s;
-        }
-
-        .field-edit-btn:hover {
-            transform: scale(1.2);
-        }
-
         .field-status {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
-            margin-right: 10px;
+            font-size: 14px;
+            flex-shrink: 0;
         }
 
         .field-status.empty {
@@ -775,367 +209,392 @@
             background: var(--accent-green);
             color: white;
         }
+
+        .field-name {
+            flex: 1;
+            font-size: 12px;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .field-item.completed .field-name {
+            color: var(--accent-green);
+        }
+
+        .field-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .field-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 2px;
+            transition: transform 0.2s;
+        }
+
+        .field-btn:hover {
+            transform: scale(1.2);
+        }
+
+        /* UPLOAD SECTION */
+        .upload-container {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .file-upload {
+            background: rgba(0,0,0,0.2);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: var(--primary);
+            background: rgba(255,126,33,0.08);
+        }
+
+        .file-upload.active {
+            border-color: var(--accent-green);
+            background: rgba(46, 204, 113, 0.08);
+        }
+
+        /* CHAT */
+        .chat-container {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .chat-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .message {
+            max-width: 80%;
+            margin: 10px 0;
+            padding: 12px 16px;
+            border-radius: 16px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.assistant {
+            background: linear-gradient(145deg, #3d2518, #2a1810);
+            border: 1px solid var(--border);
+            align-self: flex-start;
+        }
+
+        .message.user {
+            background: linear-gradient(145deg, var(--accent-green), var(--accent-green-hover));
+            color: black;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .chat-input-area {
+            padding: 15px;
+            background: var(--bg-darker);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid var(--border);
+            padding: 12px;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .chat-button {
+            background: linear-gradient(145deg, var(--accent-green), var(--accent-green-hover));
+            color: black;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .chat-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px var(--accent-green-glow);
+        }
+
+        /* ACTION BUTTONS */
+        .action-buttons {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(145deg, var(--accent-green), var(--accent-green-hover));
+            color: black;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* MODALS */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-panel);
+            border: 2px solid var(--primary);
+            border-radius: 16px;
+            max-width: 600px;
+            max-height: 80vh;
+            width: 90%;
+            overflow: hidden;
+            box-shadow: 0 0 40px var(--primary-glow);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,126,33,0.1);
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            max-height: 50vh;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background: rgba(255,126,33,0.1);
+            color: var(--primary);
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .warning-box {
+            background: rgba(243,156,18,0.1);
+            border: 1px solid var(--warning);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: var(--warning);
+        }
     </style>
+</head>
+<body>
+    <!-- HEADER MIT LOGO -->
+    <div class="header-top">
+        <div class="logo-container">
+            <img src="bg-removed-result.png" alt="Finny" class="logo">
+            <div class="logo-text">Hallo, hier ist Finny dein AI - PDF Assistent</div>
+        </div>
+    </div>
 
-    <!-- JavaScript -->
-    <script>
-        // Globale Variablen
-        const API_BASE = window.location.origin + '/api';
-        let currentSessionId = null;
-        let currentFieldIndex = 0;
-        let fields = [];
-        let collectedData = {};
-        let editingField = null;
+    <div class="main-container">
+        <!-- LINKES PANEL -->
+        <div class="left-panel">
+            <!-- FORTSCHRITTSBALKEN -->
+            <div class="progress-container">
+                <div class="progress-label">Fortschritt</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%">0%</div>
+                </div>
+            </div>
 
-        // DOM Elements
-        const elements = {
-            fileUpload: document.getElementById('file-upload'),
-            fileInput: document.getElementById('file-input'),
-            chatMessages: document.getElementById('chat-messages'),
-            chatInput: document.getElementById('chat-input'),
-            sendButton: document.getElementById('send-button'),
-            previewButton: document.getElementById('preview-button'),
-            skipButton: document.getElementById('skip-button'),
-            downloadButton: document.getElementById('download-button'),
-            resetButton: document.getElementById('reset-button'),
-            fieldsList: document.getElementById('fields-list'),
-            fieldProgress: document.getElementById('field-progress'),
-            completedCount: document.getElementById('completed-count'),
-            totalCount: document.getElementById('total-count'),
-            statusText: document.getElementById('status-text')
-        };
+            <!-- FELDLISTE -->
+            <div class="fields-container">
+                <div class="fields-header">
+                    📋 Formularfelder (<span id="field-count">0/0</span>)
+                </div>
+                <div class="fields-list" id="fields-list">
+                    <!-- Wird dynamisch gefüllt -->
+                </div>
+            </div>
 
-        // Session ID generieren
-        function generateSessionId() {
-            return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        }
+            <!-- UPLOAD -->
+            <div class="upload-container">
+                <div class="file-upload" id="file-upload">
+                    <div style="font-size: 32px;">📄</div>
+                    <div style="color: var(--text-muted); margin-top: 10px;">PDF hochladen</div>
+                    <input type="file" id="file-input" accept=".pdf" style="display: none;">
+                </div>
+            </div>
+        </div>
 
-        // Feldliste rendern
-        function renderFieldsList() {
-            elements.fieldsList.innerHTML = '';
-            
-            fields.forEach((field, index) => {
-                const value = collectedData[field.fieldName] || '';
-                const isCompleted = !!value;
-                const isActive = index === currentFieldIndex;
-                
-                const fieldDiv = document.createElement('div');
-                fieldDiv.className = `field-item ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}`;
-                fieldDiv.onclick = () => jumpToField(index);
-                
-                fieldDiv.innerHTML = `
-                    <div class="field-status ${isCompleted ? 'filled' : 'empty'}">
-                        ${isCompleted ? '✓' : ''}
+        <!-- RECHTES PANEL -->
+        <div class="right-panel">
+            <!-- CHAT -->
+            <div class="chat-container">
+                <div class="chat-header">
+                    <span style="color: var(--primary); font-weight: bold;">💬 Chat mit Finny</span>
+                    <span id="status-indicator" style="color: var(--accent-green); font-size: 12px;">● Online</span>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message assistant">
+                        Willkommen! 👋 Lade ein PDF-Formular hoch und ich helfe dir beim Ausfüllen. Du kannst jederzeit "hilfe" schreiben für Unterstützung!
                     </div>
-                    <div class="field-name" title="${field.fieldName}">
-                        ${field.fieldName}
-                    </div>
-                    ${value ? `<div class="field-value" title="${value}">${value}</div>` : ''}
-                    ${isCompleted ? `<button class="field-edit-btn" onclick="editField('${field.fieldName}', event)">✏️</button>` : ''}
-                `;
-                
-                elements.fieldsList.appendChild(fieldDiv);
-            });
-            
-            updateProgress();
-        }
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" class="chat-input" id="chat-input" placeholder="Nachricht eingeben..." disabled>
+                    <button class="chat-button" id="send-button" disabled>➤</button>
+                </div>
+            </div>
 
-        // Fortschritt updaten
-        function updateProgress() {
-            const completed = Object.keys(collectedData).length;
-            const total = fields.length;
-            elements.fieldProgress.textContent = `${completed}/${total}`;
-            elements.completedCount.textContent = completed;
-            elements.totalCount.textContent = total;
-            
-            if (completed === total && total > 0) {
-                elements.statusText.textContent = 'Fertig!';
-                elements.downloadButton.disabled = false;
-            }
-        }
+            <!-- ACTION BUTTONS -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="preview-button">
+                    👁️ Vorschau
+                </button>
+                <button class="btn btn-secondary" id="clear-button" disabled>
+                    🗑️ Feld löschen
+                </button>
+                <button class="btn btn-secondary" id="skip-button" disabled>
+                    ⏭️ Überspringen
+                </button>
+                <button class="btn btn-primary" id="download-button" disabled>
+                    📥 PDF Download
+                </button>
+            </div>
+        </div>
+    </div>
 
-        // Zu Feld springen
-        function jumpToField(index) {
-            if (index >= 0 && index < fields.length) {
-                currentFieldIndex = index;
-                renderFieldsList();
-                showField(fields[index]);
-            }
-        }
+    <!-- VORSCHAU MODAL -->
+    <div class="modal" id="preview-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span style="color: var(--primary); font-weight: bold;">📋 Vorschau der Eingaben</span>
+                <button onclick="closeModal('preview-modal')" style="background:none;border:none;color:white;font-size:24px;cursor:pointer;">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="preview-warning"></div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Feldname</th>
+                            <th>Wert</th>
+                        </tr>
+                    </thead>
+                    <tbody id="preview-tbody"></tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('preview-modal')">Schließen</button>
+                <button class="btn btn-primary" id="download-from-preview">📥 PDF herunterladen</button>
+            </div>
+        </div>
+    </div>
 
-        // Feld anzeigen
-        function showField(field) {
-            addMessage('assistant', `📝 **${field.fieldName}**\n\nBitte gib einen Wert ein oder schreibe "hilfe" für Unterstützung.`);
-            elements.chatInput.disabled = false;
-            elements.chatInput.focus();
-        }
-
-        // Feld bearbeiten
-        function editField(fieldName, event) {
-            event.stopPropagation();
-            editingField = fieldName;
-            document.getElementById('edit-field-name').textContent = fieldName;
-            document.getElementById('edit-input').value = collectedData[fieldName] || '';
-            document.getElementById('edit-modal').classList.add('active');
-            document.getElementById('edit-input').focus();
-        }
-
-        // Feld-Bearbeitung speichern
-        async function saveFieldEdit() {
-            const value = document.getElementById('edit-input').value.trim();
-            if (value && editingField) {
-                collectedData[editingField] = value;
-                
-                // Server updaten
-                await fetch(`${API_BASE}/update-field`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sessionId: currentSessionId,
-                        fieldName: editingField,
-                        value: value
-                    })
-                });
-                
-                renderFieldsList();
-                addMessage('assistant', `✅ ${editingField} wurde aktualisiert: "${value}"`);
-                closeModal('edit-modal');
-            }
-        }
-
-        // Modal schließen
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
-        }
-
-        // Vorschau anzeigen
-        function showPreview() {
-            const tbody = document.getElementById('preview-table-body');
-            tbody.innerHTML = '';
-            
-            if (Object.keys(collectedData).length === 0) {
-                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--text-muted);">Noch keine Daten eingegeben</td></tr>';
-            } else {
-                Object.entries(collectedData).forEach(([field, value]) => {
-                    const row = tbody.insertRow();
-                    row.innerHTML = `
-                        <td style="color:var(--primary)">${field}</td>
-                        <td>${value || '<em style="color:var(--text-muted)">Leer</em>'}</td>
-                    `;
-                });
-            }
-            
-            document.getElementById('preview-modal').classList.add('active');
-        }
-
-        // Chat-Nachricht hinzufügen
-        function addMessage(role, content) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${role}`;
-            
-            // Markdown-ähnliche Formatierung
-            let formatted = content
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\n/g, '<br>');
-            
-            messageDiv.innerHTML = formatted;
-            elements.chatMessages.appendChild(messageDiv);
-            elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
-        }
-
-        // Nachricht senden
-        async function sendMessage() {
-            const message = elements.chatInput.value.trim();
-            if (!message) return;
-            
-            addMessage('user', message);
-            elements.chatInput.value = '';
-            
-            try {
-                const response = await fetch(`${API_BASE}/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sessionId: currentSessionId,
-                        messages: [{ role: 'user', content: message }],
-                        currentFieldIndex: currentFieldIndex,
-                        collectedData: collectedData
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.response) {
-                    addMessage('assistant', data.response);
-                }
-                
-                // Aktion verarbeiten
-                if (data.action === 'field_saved' && data.collectedData) {
-                    const field = fields[currentFieldIndex];
-                    if (field) {
-                        collectedData[field.fieldName] = message;
-                        currentFieldIndex++;
-                        renderFieldsList();
-                        
-                        if (currentFieldIndex < fields.length) {
-                            setTimeout(() => showField(fields[currentFieldIndex]), 1000);
-                        } else {
-                            addMessage('assistant', '🎉 Alle Felder ausgefüllt! Du kannst jetzt das PDF herunterladen.');
-                            elements.chatInput.disabled = true;
-                        }
-                    }
-                } else if (data.action === 'next_field') {
-                    currentFieldIndex++;
-                    if (currentFieldIndex < fields.length) {
-                        showField(fields[currentFieldIndex]);
-                    }
-                    renderFieldsList();
-                }
-                
-            } catch (error) {
-                console.error('Chat error:', error);
-                addMessage('assistant', '❌ Verbindungsfehler. Bitte versuche es erneut.');
-            }
-        }
-
-        // PDF hochladen
-        async function handleFileUpload() {
-            const file = elements.fileInput.files[0];
-            if (!file) return;
-            
-            elements.statusText.textContent = 'Lädt PDF...';
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            try {
-                const uploadRes = await fetch(`${API_BASE}/upload-pdf`, {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const uploadData = await uploadRes.json();
-                if (!uploadData.success) throw new Error(uploadData.error);
-                
-                currentSessionId = generateSessionId();
-                
-                // Felder extrahieren
-                const extractRes = await fetch(`${API_BASE}/extract-fields`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        url: uploadData.url,
-                        sessionId: currentSessionId
-                    })
-                });
-                
-                const extractData = await extractRes.json();
-                if (!extractData.success) throw new Error(extractData.error);
-                
-                fields = extractData.fields;
-                collectedData = {};
-                currentFieldIndex = 0;
-                
-                renderFieldsList();
-                elements.statusText.textContent = 'PDF geladen';
-                
-                // Controls aktivieren
-                elements.chatInput.disabled = false;
-                elements.sendButton.disabled = false;
-                elements.previewButton.disabled = false;
-                elements.skipButton.disabled = false;
-                
-                addMessage('assistant', `✅ PDF geladen! Ich habe ${fields.length} Felder gefunden. Lass uns anfangen!`);
-                showField(fields[0]);
-                
-            } catch (error) {
-                console.error('Upload error:', error);
-                elements.statusText.textContent = 'Fehler';
-                addMessage('assistant', '❌ Fehler: ' + error.message);
-            }
-        }
-
-        // PDF herunterladen
-        async function downloadPDF() {
-            try {
-                elements.statusText.textContent = 'Erstellt PDF...';
-                
-                const response = await fetch(`${API_BASE}/fill-pdf`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        url: fields[0]?.pdfUrl,
-                        sessionId: currentSessionId
-                    })
-                });
-                
-                const data = await response.json();
-                if (!data.success) throw new Error(data.error);
-                
-                // Download
-                const link = document.createElement('a');
-                link.href = data.url;
-                link.download = 'ausgefuelltes_formular.pdf';
-                link.click();
-                
-                elements.statusText.textContent = 'PDF heruntergeladen';
-                addMessage('assistant', '✅ PDF wurde heruntergeladen!');
-                
-            } catch (error) {
-                console.error('Download error:', error);
-                elements.statusText.textContent = 'Download-Fehler';
-                addMessage('assistant', '❌ Fehler beim Download: ' + error.message);
-            }
-        }
-
-        // Event Listeners
-        elements.fileUpload.addEventListener('click', () => elements.fileInput.click());
-        elements.fileInput.addEventListener('change', handleFileUpload);
-        elements.sendButton.addEventListener('click', sendMessage);
-        elements.chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-        elements.previewButton.addEventListener('click', showPreview);
-        elements.skipButton.addEventListener('click', () => {
-            currentFieldIndex++;
-            if (currentFieldIndex < fields.length) {
-                showField(fields[currentFieldIndex]);
-                renderFieldsList();
-            }
-        });
-        elements.downloadButton.addEventListener('click', downloadPDF);
-        elements.resetButton.addEventListener('click', () => {
-            if (confirm('Wirklich neu starten? Alle Daten gehen verloren!')) {
-                location.reload();
-            }
-        });
-
-        // Drag & Drop
-        elements.fileUpload.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            elements.fileUpload.classList.add('active');
-        });
-        
-        elements.fileUpload.addEventListener('dragleave', () => {
-            elements.fileUpload.classList.remove('active');
-        });
-        
-        elements.fileUpload.addEventListener('drop', (e) => {
-            e.preventDefault();
-            elements.fileUpload.classList.remove('active');
-            if (e.dataTransfer.files.length > 0) {
-                elements.fileInput.files = e.dataTransfer.files;
-                handleFileUpload();
-            }
-        });
-
-        // Live-Uhr
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('clockTime').textContent = now.toLocaleTimeString('de-DE');
-            document.getElementById('clockDate').textContent = now.toLocaleDateString('de-DE');
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
-    </script>
-</body>
-</html>
+    <!-- BEARBEITEN MODAL -->
+    <div class="modal" id="edit-modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <span style="color:
