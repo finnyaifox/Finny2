@@ -574,7 +574,7 @@ ${nextField ? `Das nächste Feld ist: "${nextField.fieldName}"` : 'Alle Felder s
 Antworte kurz und freundlich auf Deutsch. Bestätige die Eingabe und leite zum nächsten Feld über.`;
 
           const aiRes = await axios.post(
-            'https://api.cometapi.com/v1/messages',
+            'https://api.cometapi.com/v1/chat/completions',
             {
               model: MODEL_NAME,
               messages: [
