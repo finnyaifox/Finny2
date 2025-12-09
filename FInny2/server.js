@@ -11,8 +11,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // 🚀 COMET API MIT KIMI K2-THINKING MODEL
-const COMET_API_URL = 'https://api.cometapi.com/v1/messages';
-const MODEL_NAME = "claude-sonnet-4-5-20250929-thinking";
+const COMET_API_URL = 'https://api.cometapi.com/v1/chat/completions';
+const MODEL_NAME = "kimi-k2-thinking";
 
 // ============================================
 // 📋 ENHANCED LOGGING
@@ -496,153 +496,71 @@ function findFieldByPartialName(partialName, fields) {
 // ============================================
 app.post('/api/chat', async (req, res) => {
   try {
-    const { sessionId, messages } = req.body;
-    console.log('🔍 DEBUG /api/chat body:', req.body); 
-    const session = sessions.get(sessionId);
-
+    const { sessionId, messages, currentFieldIndex: clientFieldIndex, collectedData: clientData } = req.body;
+    
+    let session = sessions.get(sessionId);
+    
+    // Session wiederherstellen falls nicht vorhanden
     if (!session) {
-      Logger.error('CHAT', `Session not found: ${sessionId}`);
-      return res.status(404).json({ success: false, error: 'Session not found' });
+      Logger.warn('CHAT', `Session ${sessionId} not found, creating new`);
+      session = {
+        sessionId,
+        fields: [],
+        currentFieldIndex: clientFieldIndex || 0,
+        collectedData: clientData || {},
+        history: []
+      };
+      sessions.set(sessionId, session);
     }
-
-     const lastUserMsg = messages
-      .filter(m => m.role === 'user')
-      .pop()?.content || '';
-
+    
+    // Client-Daten synchronisieren
+    if (clientFieldIndex !== undefined) session.currentFieldIndex = clientFieldIndex;
+    if (clientData) session.collectedData = { ...session.collectedData, ...clientData };
+    
+    const lastUserMsg = messages?.filter(m => m.role === 'user').pop()?.content || '';
     if (!lastUserMsg) {
-      Logger.warn('CHAT', 'No user message in array');
       return res.status(400).json({ success: false, error: 'No user message' });
     }
-    /* ========================= */
-
-    Logger.debug(`Chat [${sessionId}]: ${lastUserMsg.substring(0, 50)}...`);
+    
+    Logger.info('CHAT', `Processing: "${lastUserMsg}" for field ${session.currentFieldIndex}`);
     
     // Intent analysieren
     const intent = analyzeIntent(lastUserMsg, session);
     
-    // Befehle behandeln
-    if (intent.type === 'show_commands') {
-      let commandsList = '📋 **Verfügbare Befehle:**\n\n';
-      for (const [cmd, desc] of Object.entries(COMMANDS)) {
-        commandsList += `• **${cmd}** - ${desc}\n`;
-      }
-      
-      session.history.push({ role: 'user', content: lastUserMsg });
-      session.history.push({ role: 'assistant', content: commandsList });
-      
-      return res.json({
-        success: true,
-        response: commandsList,
-        isCommand: true
-      });
-    }
-    
+    // Spezial-Befehle behandeln
     if (intent.type === 'skip') {
-      session.history.push({ role: 'user', content: lastUserMsg });
+      session.currentFieldIndex++;
       return res.json({
         success: true,
         response: '⏭️ Feld übersprungen.',
-        action: 'skip'
+        action: 'next_field',
+        nextFieldIndex: session.currentFieldIndex
       });
     }
     
-    if (intent.type === 'back') {
-      if (session.currentFieldIndex > 0) {
-        session.currentFieldIndex--;
-        const prevField = session.fields[session.currentFieldIndex];
-        return res.json({
-          success: true,
-          response: `⬅️ Zurück zu: **${prevField.fieldName}**`,
-          action: 'back',
-          fieldIndex: session.currentFieldIndex
-        });
-      } else {
-        return res.json({
-          success: true,
-          response: '⚠️ Du bist bereits beim ersten Feld.',
-          isCommand: true
-        });
-      }
-    }
-    
-    if (intent.type === 'status') {
-      const completed = Object.keys(session.collectedData).length;
-      const total = session.fields.length;
-      const percent = Math.round((completed / total) * 100);
+    // Normale Eingabe = Wert speichern
+    if (intent.type === 'input' && session.fields[session.currentFieldIndex]) {
+      const field = session.fields[session.currentFieldIndex];
       
-      return res.json({
-        success: true,
-        response: `📊 **Fortschritt:** ${completed}/${total} Felder ausgefüllt (${percent}%)`,
-        isCommand: true
-      });
-    }
-    
-    if (intent.type === 'finish') {
-      return res.json({
-        success: true,
-        response: '✅ Eingabe beendet! Du kannst jetzt die Vorschau öffnen.',
-        action: 'finish'
-      });
-    }
-    
-    if (intent.type === 'navigate') {
-      const targetIndex = findFieldByPartialName(intent.target, session.fields);
-      if (targetIndex !== -1) {
-        session.currentFieldIndex = targetIndex;
-        const targetField = session.fields[targetIndex];
-        return res.json({
-          success: true,
-          response: `🎯 Springe zu Feld: **${targetField.fieldName}**`,
-          action: 'navigate',
-          fieldIndex: targetIndex
-        });
-      } else {
-        return res.json({
-          success: true,
-          response: `❌ Feld "${intent.target}" nicht gefunden. Nutze "befehle" für eine Liste aller Felder.`,
-          isCommand: true
-        });
-      }
-    }
-
-    const field = session.fields[session.currentFieldIndex];
-    
-    // Hilfe-Request mit verbesserter KI
-    if (intent.type === 'help') {
-      if (cometApiActive && !COMET_API_KEY.includes('DEMO')) {
+      // Wert speichern
+      session.collectedData[field.fieldName] = intent.value;
+      session.currentFieldIndex++;
+      
+      // KI-Antwort generieren
+      let aiResponse = `✅ "${intent.value}" für **${field.fieldName}** gespeichert!`;
+      
+      if (cometApiActive && COMET_API_KEY && !COMET_API_KEY.includes('DEMO')) {
         try {
-          const fieldInfo = FIELD_HINTS[field.fieldName] || {
-            hint: 'Bitte geben Sie einen Wert ein',
-            example: 'Beispiel',
-            validation: 'Keine spezifischen Anforderungen'
-          };
-          
-          const systemPrompt = `Du bist Finny, ein hochintelligenter, freundlicher und professioneller PDF-Formular-Assistent.
+          const nextField = session.fields[session.currentFieldIndex];
+          const systemPrompt = `Du bist Finny, ein freundlicher PDF-Assistent.
+Der Nutzer hat gerade "${intent.value}" für das Feld "${field.fieldName}" eingegeben.
 
-Deine Aufgabe ist es, den Nutzer Schritt für Schritt durch alle Formularfelder zu begleiten.
+${nextField ? `Das nächste Feld ist: "${nextField.fieldName}"` : 'Alle Felder sind ausgefüllt!'}
 
-WICHTIGE REGELN:
-1. Wenn der Nutzer eine Frage stellt ("Was ist das?", "Erklär mir das", "Beispiel"), gib eine ausführliche, verständliche Erklärung
-2. Nutze die Feldbeschreibung, Beispielwerte und Tipps in deinen Antworten
-3. Sei immer freundlich, professionell und auf Deutsch
-4. Erkläre KONKRET und PRAKTISCH, nicht theoretisch
-5. Gib IMMER ein konkretes Beispiel
-6. Maximal 3-4 Sätze + Beispiel
+Antworte kurz und freundlich auf Deutsch. Bestätige die Eingabe und leite zum nächsten Feld über.`;
 
-AKTUELLES FELD:
-- Name: "${field.fieldName}"
-- Typ: ${field.type}
-- Erforderlich: ${field.required ? 'Ja' : 'Nein'}
-- Hinweis: ${fieldInfo.hint}
-- Beispiel: ${fieldInfo.example}
-- Validierung: ${fieldInfo.validation}
-
-Der Nutzer fragt: "${lastUserMsg}"
-
-Gib jetzt eine hilfreiche, konkrete Erklärung mit Beispiel!`;
-
-          const response = await axios.post(
-            COMET_API_URL,
+          const aiRes = await axios.post(
+            'https://api.cometapi.com/v1/messages',
             {
               model: MODEL_NAME,
               messages: [
@@ -650,149 +568,58 @@ Gib jetzt eine hilfreiche, konkrete Erklärung mit Beispiel!`;
                 { role: 'user', content: lastUserMsg }
               ],
               temperature: 0.7,
-              max_tokens: 500
+              max_tokens: 200
             },
             {
               headers: {
                 'Authorization': `Bearer ${COMET_API_KEY}`,
                 'Content-Type': 'application/json'
-              }
+              },
+              timeout: 10000
             }
           );
-
-          let helpText = response.data.choices[0]?.message?.content || 'Entschuldigung, ich konnte keine Erklärung finden.';
           
-          session.history.push({ role: 'user', content: lastUserMsg });
-          session.history.push({ role: 'assistant', content: helpText });
-
-          return res.json({
-            success: true,
-            response: `💡 ${helpText}`,
-            isHelp: true,
-            fieldName: field.fieldName
-          });
-        } catch (aiErr) {
-          Logger.warn('COMET', 'Help request failed, using fallback', aiErr);
+          aiResponse = aiRes.data.choices?.[0]?.message?.content || aiResponse;
+        } catch (err) {
+          Logger.warn('COMET', 'AI failed, using fallback', err);
         }
       }
       
-      // Fallback ohne KI
-      const fieldInfo = FIELD_HINTS[field.fieldName] || {
-        hint: 'Bitte geben Sie einen Wert ein',
-        example: 'Beispiel',
-        validation: 'Keine spezifischen Anforderungen'
-      };
+      return res.json({
+        success: true,
+        response: aiResponse,
+        action: 'field_saved',
+        nextFieldIndex: session.currentFieldIndex,
+        collectedData: session.collectedData
+      });
+    }
+    
+    // Hilfe-Anfrage mit KI
+    if (intent.type === 'help' && session.fields[session.currentFieldIndex]) {
+      const field = session.fields[session.currentFieldIndex];
+      const fieldInfo = FIELD_HINTS[field.fieldName] || {};
       
       return res.json({
         success: true,
-        response: `💡 ${fieldInfo.hint}\n\nBeispiel: ${fieldInfo.example}`,
-        isHelp: true,
-        fieldName: field.fieldName
+        response: `💡 **${field.fieldName}**\n\n${fieldInfo.hint || 'Bitte einen Wert eingeben'}\n\nBeispiel: ${fieldInfo.example || 'Text eingeben'}`,
+        isHelp: true
       });
     }
-
-    // Normale Eingabe validieren
-    const validation = validateInput(lastUserMsg, field);
     
-    if (!validation.valid) {
-      return res.json({
-        success: true,
-        response: `⚠️ ${validation.reason}`,
-        isValidation: true,
-        needsCorrection: true
-      });
-    }
-
-    // Intelligente Bestätigung mit KI
-    let confirmationMsg = `✅ Gespeichert!`;
-    
-    if (cometApiActive && !COMET_API_KEY.includes('DEMO')) {
-      try {
-        const fieldInfo = FIELD_HINTS[field.fieldName] || {};
-        
-        const systemPrompt = `Du bist Finny, ein intelligenter PDF-Formular-Assistent.
-
-AUFGABE: Validiere die Benutzereingabe für das Formularfeld.
-
-FELD: "${field.fieldName}"
-ERWARTUNG: ${fieldInfo.hint || 'Kein spezifischer Hinweis'}
-BEISPIEL: ${fieldInfo.example || 'Kein Beispiel'}
-EINGABE: "${lastUserMsg}"
-
-Bewerte die Eingabe:
-- Ist sie vollständig und sinnvoll?
-- Passt sie zum erwarteten Format?
-- Ist sie zu kurz, zu allgemein oder unsinnig?
-
-Antworte NUR mit einem der folgenden:
-1. "OK" - wenn die Eingabe gut ist
-2. "NEEDS_IMPROVEMENT: [kurze Begründung]" - wenn sie verbessert werden sollte
-3. "INVALID: [kurze Begründung]" - wenn sie ungültig ist
-
-WICHTIG: Kurze unsinnige Eingaben wie "ok", "f", "test", "1111" sind INVALID!`;
-
-        const response = await axios.post(
-          COMET_API_URL,
-          {
-            model: MODEL_NAME,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: `Validiere: "${lastUserMsg}"` }
-            ],
-            temperature: 0.3,
-            max_tokens: 200
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${COMET_API_KEY}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-
-        const aiValidation = response.data.choices[0]?.message?.content?.trim() || 'OK';
-        
-        if (aiValidation.includes('INVALID')) {
-          const reason = aiValidation.split(':')[1]?.trim() || 'Die Eingabe scheint nicht vollständig zu sein.';
-          return res.json({
-            success: true,
-            response: `⚠️ ${reason}\n\nBitte versuche es erneut oder gib "hilfe" ein für Unterstützung.`,
-            isValidation: true,
-            needsCorrection: true
-          });
-        }
-        
-        if (aiValidation.includes('NEEDS_IMPROVEMENT')) {
-          const suggestion = aiValidation.split(':')[1]?.trim() || 'Die Eingabe könnte detaillierter sein.';
-          confirmationMsg = `⚠️ Hinweis: ${suggestion}\n\nMöchtest du die Eingabe korrigieren? Gib "zurück" ein oder fahre mit "weiter" fort.`;
-        }
-        
-      } catch (aiErr) {
-        Logger.warn('COMET', 'Validation failed, using simple confirmation', aiErr);
-      }
-    }
-
-    // Eingabe speichern
-    session.collectedData[field.fieldName] = lastUserMsg;
-    session.history.push({ role: 'user', content: lastUserMsg });
-    session.history.push({ role: 'assistant', content: confirmationMsg });
-
-    res.json({
+    // Fallback
+    return res.json({
       success: true,
-      response: confirmationMsg,
-      isHelp: false,
-      fieldName: field.fieldName,
-      action: 'saved'
+      response: 'Ich verstehe dich nicht. Gib einen Wert ein oder schreibe "hilfe".',
+      isCommand: true
     });
-
+    
   } catch (err) {
     Logger.error('CHAT', 'Failed', err);
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
+
+
 
 Logger.debug('✓ Chat endpoint registered');
 
