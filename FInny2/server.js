@@ -395,6 +395,48 @@ app.post('/api/extract-fields', async (req, res) => {
 
 Logger.debug('✓ Extract endpoint registered');
 
+// ============================================
+// 📊 GET SESSION STATUS
+// ============================================
+app.get('/api/session/:sessionId', (req, res) => {
+  const session = sessions.get(req.params.sessionId);
+  if (!session) {
+    return res.status(404).json({ success: false, error: 'Session not found' });
+  }
+  
+  const fieldsStatus = session.fields.map(field => ({
+    fieldName: field.fieldName,
+    index: field.index,
+    value: session.collectedData[field.fieldName] || '',
+    completed: !!session.collectedData[field.fieldName]
+  }));
+  
+  res.json({
+    success: true,
+    fields: fieldsStatus,
+    currentIndex: session.currentFieldIndex,
+    totalCompleted: Object.keys(session.collectedData).length,
+    totalFields: session.fields.length
+  });
+});
+
+// ============================================
+// 📝 UPDATE SINGLE FIELD
+// ============================================
+app.post('/api/update-field', (req, res) => {
+  const { sessionId, fieldName, value } = req.body;
+  const session = sessions.get(sessionId);
+  
+  if (!session) {
+    return res.status(404).json({ success: false, error: 'Session not found' });
+  }
+  
+  session.collectedData[fieldName] = value;
+  Logger.info('FIELD', `Updated ${fieldName} = ${value}`);
+  
+  res.json({ success: true, collectedData: session.collectedData });
+});
+
 // 🔄 UPDATE SESSION
 // ============================================
 app.post('/api/update-session', (req, res) => {
