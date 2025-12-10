@@ -491,50 +491,50 @@
 
         /* === MOBILE OPTIMIERUNG === */
         @media screen and (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            
-            .container {
-                max-width: 100% !important;
-                padding: 10px !important;
-                margin: 0 !important;
-            }
-            
-            .header h1 {
-                font-size: 24px;
-            }
-            
-            .upload-area {
-                padding: 20px;
-                min-height: 120px;
-            }
-            
-            .chat-panel, .fields-panel {
-                width: 100% !important;
-                max-width: 100% !important;
-            }
-            
-            .main-content {
-                flex-direction: column;
-            }
-            
-            .btn {
-                padding: 10px 15px;
-                font-size: 14px;
-            }
-        }
+    body {
+        padding: 10px;
+    }
+    
+    .main-container {           /* ✅ Korrekte Klasse */
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+    }
+    
+    .left-panel {               /* ✅ Korrekte Klasse */
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    .right-panel {              /* ✅ Korrekte Klasse */
+        width: 100% !important;
+    }
+    
+    .header-top h1 {            /* ✅ Korrekte Klasse */
+        font-size: 24px;
+    }
+    
+    .file-upload {              /* ✅ Korrekte Klasse */
+        padding: 20px;
+        min-height: 120px;
+    }
+    
+    .btn {
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+}
         
         @media screen and (max-width: 480px) {
-            .header h1 {
-                font-size: 20px;
-            }
-            
-            .upload-area {
-                padding: 15px;
-                font-size: 14px;
-            }
-        }
+    .header-top h1 {           /* ✅ Korrekte Klasse */
+        font-size: 20px;
+    }
+    
+    .file-upload {             /* ✅ Korrekte Klasse */
+        padding: 15px;
+        font-size: 14px;
+    }
+}
     </style>
 </head>
 <body>
@@ -668,7 +668,7 @@
         let uploadedFileName = '';
 
         // ===== PDF UPLOAD FUNKTIONALITÄT =====
-        const uploadArea = document.querySelector('.upload-area');
+        const uploadArea = document.querySelector('.file-upload');
         const fileInput = document.getElementById('file-input');
         
         // Click auf Upload Area öffnet File Dialog
@@ -678,28 +678,28 @@
         
         // Drag & Drop Support
         uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.style.borderColor = '#0066cc';
-            uploadArea.style.background = '#f0f7ff';
-        });
-        
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.style.borderColor = '#ddd';
-            uploadArea.style.background = 'white';
-        });
+    e.preventDefault();
+    uploadArea.style.borderColor = 'var(--primary)';
+    uploadArea.style.background = 'rgba(255,126,33,0.08)';
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.style.borderColor = 'var(--border)';
+    uploadArea.style.background = 'rgba(0,0,0,0.2)';
+});
         
         uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.style.borderColor = '#ddd';
-            uploadArea.style.background = 'white';
-            
-            const files = e.dataTransfer.files;
-            if (files.length > 0 && files[0].type === 'application/pdf') {
-                handleFileUpload(files[0]);
-            } else {
-                alert('Bitte nur PDF-Dateien hochladen!');
-            }
-        });
+    e.preventDefault();
+    uploadArea.style.borderColor = 'var(--border)';
+    uploadArea.style.background = 'rgba(0,0,0,0.2)';
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0 && files[0].type === 'application/pdf') {
+        handleFileUpload(files[0]);
+    } else {
+        alert('Bitte nur PDF-Dateien hochladen!');
+    }
+});
         
         // File Input Change Event
         fileInput.addEventListener('change', (e) => {
