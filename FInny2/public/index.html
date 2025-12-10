@@ -488,6 +488,53 @@
             margin: 15px 0;
             color: var(--warning);
         }
+
+        /* === MOBILE OPTIMIERUNG === */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                max-width: 100% !important;
+                padding: 10px !important;
+                margin: 0 !important;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .upload-area {
+                padding: 20px;
+                min-height: 120px;
+            }
+            
+            .chat-panel, .fields-panel {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .btn {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+        }
+        
+        @media screen and (max-width: 480px) {
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .upload-area {
+                padding: 15px;
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -597,4 +644,291 @@
     <div class="modal" id="edit-modal">
         <div class="modal-content" style="max-width: 400px;">
             <div class="modal-header">
-                <span style="color:
+                                <span style="color: white; font-size: 18px; font-weight: bold;">✏️ Feld bearbeiten</span>
+                <button onclick="closeModal('edit-modal')" style="background:none;border:none;color:white;font-size:24px;cursor:pointer;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label for="edit-field-name" style="display: block; margin-bottom: 10px; font-weight: bold;">Feldname:</label>
+                <input type="text" id="edit-field-name" style="width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px;">
+                
+                <label for="edit-field-value" style="display: block; margin-bottom: 10px; font-weight: bold;">Feldwert:</label>
+                <input type="text" id="edit-field-value" style="width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('edit-modal')">Abbrechen</button>
+                <button class="btn btn-primary" id="save-edit-button">💾 Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== GLOBALE VARIABLEN =====
+        let extractedFields = [];
+        let currentEditIndex = -1;
+        let uploadedFileName = '';
+
+        // ===== PDF UPLOAD FUNKTIONALITÄT =====
+        const uploadArea = document.querySelector('.upload-area');
+        const fileInput = document.getElementById('file-input');
+        
+        // Click auf Upload Area öffnet File Dialog
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        // Drag & Drop Support
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#0066cc';
+            uploadArea.style.background = '#f0f7ff';
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#ddd';
+            uploadArea.style.background = 'white';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ddd';
+            uploadArea.style.background = 'white';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/pdf') {
+                handleFileUpload(files[0]);
+            } else {
+                alert('Bitte nur PDF-Dateien hochladen!');
+            }
+        });
+        
+        // File Input Change Event
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+        
+        // PDF Upload Handler
+        function handleFileUpload(file) {
+            uploadedFileName = file.name;
+            uploadArea.innerHTML = `
+                <p style="margin: 0; font-size: 18px;">✅ ${file.name}</p>
+                <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">
+                    ${(file.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+            `;
+            
+            setTimeout(() => {
+                simulateFieldExtraction();
+            }, 1000);
+        }
+        
+        // Simulierte Feld-Extraktion
+        function simulateFieldExtraction() {
+            extractedFields = [
+                { name: 'Vorname', value: '', confidence: 0.95 },
+                { name: 'Nachname', value: '', confidence: 0.92 },
+                { name: 'Adresse', value: '', confidence: 0.88 },
+                { name: 'PLZ', value: '', confidence: 0.90 },
+                { name: 'Stadt', value: '', confidence: 0.93 },
+                { name: 'E-Mail', value: '', confidence: 0.87 }
+            ];
+            
+            renderFields();
+            enableButtons();
+        }
+        
+        // ===== FELDER RENDERN =====
+        function renderFields() {
+            const container = document.querySelector('.fields-container');
+            container.innerHTML = '';
+            
+            extractedFields.forEach((field, index) => {
+                const fieldElement = document.createElement('div');
+                fieldElement.className = 'field-item';
+                fieldElement.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <span style="font-weight: bold; color: #333;">${field.name}</span>
+                        <span style="font-size: 12px; color: ${field.confidence > 0.9 ? '#28a745' : '#ffc107'};">
+                            ${(field.confidence * 100).toFixed(0)}% sicher
+                        </span>
+                    </div>
+                    <input type="text" class="field-value" value="${field.value}" 
+                           data-index="${index}" 
+                           placeholder="Wert eingeben...">
+                    <button class="field-btn" onclick="editField(${index})">✏️</button>
+                `;
+                container.appendChild(fieldElement);
+            });
+            
+            document.querySelectorAll('.field-value').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    extractedFields[index].value = e.target.value;
+                });
+            });
+        }
+        
+        // ===== MODAL FUNKTIONEN =====
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        // ===== EDIT FUNKTIONALITÄT =====
+        function editField(index) {
+            currentEditIndex = index;
+            const field = extractedFields[index];
+            
+            document.getElementById('edit-field-name').value = field.name;
+            document.getElementById('edit-field-value').value = field.value;
+            
+            openModal('edit-modal');
+        }
+        
+        document.getElementById('save-edit-button').addEventListener('click', () => {
+            if (currentEditIndex >= 0) {
+                extractedFields[currentEditIndex].name = document.getElementById('edit-field-name').value;
+                extractedFields[currentEditIndex].value = document.getElementById('edit-field-value').value;
+                renderFields();
+                closeModal('edit-modal');
+            }
+        });
+        
+        // ===== CHAT FUNKTIONALITÄT =====
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+        const messagesDiv = document.getElementById('messages');
+        
+        chatInput.addEventListener('input', () => {
+            sendButton.disabled = chatInput.value.trim() === '';
+        });
+        
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !sendButton.disabled) {
+                sendMessage();
+            }
+        });
+        
+        sendButton.addEventListener('click', sendMessage);
+        
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (message === '') return;
+            
+            addMessage(message, 'user');
+            chatInput.value = '';
+            sendButton.disabled = true;
+            
+            setTimeout(() => {
+                const responses = [
+                    'Ich habe deine Anfrage verstanden. Welches Feld möchtest du bearbeiten?',
+                    'Verstanden! Ich kann dir helfen, die Felder auszufüllen.',
+                    'Gerne! Sage mir einfach, was geändert werden soll.',
+                    'Ich bin bereit zu helfen. Was möchtest du tun?'
+                ];
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                addMessage(randomResponse, 'assistant');
+            }, 800);
+        }
+        
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = text;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        // ===== BUTTON FUNKTIONALITÄT =====
+        document.getElementById('preview-button').addEventListener('click', () => {
+            const tbody = document.querySelector('#preview-table tbody');
+            tbody.innerHTML = '';
+            
+            extractedFields.forEach(field => {
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = field.name;
+                row.insertCell(1).textContent = field.value || '(leer)';
+                row.insertCell(2).textContent = (field.confidence * 100).toFixed(0) + '%';
+            });
+            
+            openModal('preview-modal');
+        });
+        
+        document.getElementById('clear-button').addEventListener('click', () => {
+            if (confirm('Möchtest du wirklich alle Felder leeren?')) {
+                extractedFields.forEach(field => field.value = '');
+                renderFields();
+            }
+        });
+        
+        document.getElementById('skip-button').addEventListener('click', () => {
+            if (confirm('Möchtest du dieses Dokument überspringen?')) {
+                resetApp();
+            }
+        });
+        
+        document.getElementById('download-button').addEventListener('click', downloadPDF);
+        document.getElementById('download-from-preview').addEventListener('click', () => {
+            closeModal('preview-modal');
+            downloadPDF();
+        });
+        
+        function downloadPDF() {
+            const data = extractedFields.map(f => `${f.name}: ${f.value}`).join('\n');
+            const blob = new Blob([data], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = uploadedFileName.replace('.pdf', '_ausgefuellt.txt');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('PDF wurde heruntergeladen! (Simulation)');
+        }
+        
+        // ===== HILFSFUNKTIONEN =====
+        function enableButtons() {
+            document.getElementById('send-button').disabled = false;
+            document.getElementById('clear-button').disabled = false;
+            document.getElementById('skip-button').disabled = false;
+            document.getElementById('download-button').disabled = false;
+        }
+        
+        function resetApp() {
+            extractedFields = [];
+            uploadedFileName = '';
+            uploadArea.innerHTML = `
+                <p style="margin: 0; font-size: 20px; color: #0066cc;">📄</p>
+                <p style="margin: 10px 0 5px 0; font-weight: bold; color: #333;">
+                    PDF-Formular hochladen
+                </p>
+                <p style="margin: 0; font-size: 14px; color: #666;">
+                    Klicken oder Datei hierher ziehen
+                </p>
+            `;
+            document.querySelector('.fields-container').innerHTML = 
+                '<p style="color: #999; text-align: center; padding: 20px;">Keine Felder erkannt</p>';
+            messagesDiv.innerHTML = '';
+            
+            document.getElementById('send-button').disabled = true;
+            document.getElementById('clear-button').disabled = true;
+            document.getElementById('skip-button').disabled = true;
+            document.getElementById('download-button').disabled = true;
+        }
+        
+        // Modal schließen bei Klick außerhalb
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+            }
+        });
+    </script>
+
+</body>
+</html>
