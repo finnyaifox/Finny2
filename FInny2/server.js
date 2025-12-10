@@ -14,8 +14,6 @@ const PORT = process.env.PORT || 3000;
 const COMET_API_URL = 'https://api.cometapi.com/v1/chat/completions';
 const MODEL_NAME = "kimi-k2-thinking";
 
-Logger.info('CONFIG', `Using model: ${MODEL_NAME}`)
-
 // ============================================
 // 📋 ENHANCED LOGGING
 // ============================================
@@ -39,6 +37,8 @@ const Logger = {
     console.log(`🔡 [DEBUG] ${msg}`);
   }
 };
+
+Logger.info('CONFIG', `Using model: ${MODEL_NAME}`);
 
 // ============================================
 // 📋 ENV & API KEYS
