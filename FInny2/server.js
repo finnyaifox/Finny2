@@ -14,6 +14,8 @@ const PORT = process.env.PORT || 3000;
 const COMET_API_URL = 'https://api.cometapi.com/v1/chat/completions';
 const MODEL_NAME = "kimi-k2-thinking";
 
+Logger.info('CONFIG', `Using model: ${MODEL_NAME}`)
+
 // ============================================
 // 📋 ENHANCED LOGGING
 // ============================================
@@ -385,16 +387,22 @@ app.post('/api/extract-fields', async (req, res) => {
       Logger.warn('EXTRACT', 'Using DEMO mode');
       
       const session = {
-        sessionId,
-        fields: [
-          { index: 0, fieldName: 'Demo_Field_1', type: 'text', pageIndex: 0, value: '', required: false },
-          { index: 1, fieldName: 'Demo_Field_2', type: 'email', pageIndex: 0, value: '', required: false }
-        ],
-        pdfUrl: url,
-        currentFieldIndex: 0,
-        history: [],
-        collectedData: {}
-      };
+  sessionId,
+  fields: [
+    { index: 0, fieldName: 'Vorname', type: 'text', pageIndex: 0, value: '', required: true },
+    { index: 1, fieldName: 'Nachname', type: 'text', pageIndex: 0, value: '', required: true },
+    { index: 2, fieldName: 'Geburtsdatum', type: 'date', pageIndex: 0, value: '', required: true },
+    { index: 3, fieldName: 'Adresse', type: 'text', pageIndex: 0, value: '', required: true },
+    { index: 4, fieldName: 'PLZ', type: 'text', pageIndex: 0, value: '', required: true },
+    { index: 5, fieldName: 'Stadt', type: 'text', pageIndex: 0, value: '', required: true },
+    { index: 6, fieldName: 'E-Mail', type: 'email', pageIndex: 0, value: '', required: false },
+    { index: 7, fieldName: 'Telefon', type: 'text', pageIndex: 0, value: '', required: false }
+  ],
+  pdfUrl: url,
+  currentFieldIndex: 0,
+  history: [],
+  collectedData: {}
+};
       sessions.set(sessionId, session);
       Logger.success('EXTRACT', `Session erstellt: ${sessionId}`);
       
@@ -422,16 +430,25 @@ app.post('/api/extract-fields', async (req, res) => {
     Logger.info('EXTRACT', 'Response received');
 
     let fieldsData = [];
-    
-    if (extractRes.data.info?.FieldsInfo?.Fields) {
-      fieldsData = extractRes.data.info.FieldsInfo.Fields;
-    } else if (extractRes.data.info?.fields) {
-      fieldsData = extractRes.data.info.fields;
-    } else if (extractRes.data.fields) {
-      fieldsData = extractRes.data.fields;
-    }
 
-    Logger.info('EXTRACT', `Found ${fieldsData.length} fields`);
+Logger.debug('EXTRACT', `PDF.co Response structure: ${JSON.stringify(Object.keys(extractRes.data))}`);
+
+// Prüfe die verschiedenen möglichen Antwort-Strukturen
+if (extractRes.data.body?.fields) {
+  fieldsData = extractRes.data.body.fields;
+  Logger.info('EXTRACT', 'Using extractRes.data.body.fields');
+} else if (extractRes.data.fields) {
+  fieldsData = extractRes.data.fields;
+  Logger.info('EXTRACT', 'Using extractRes.data.fields');
+} else if (extractRes.data.info?.FieldsInfo?.Fields) {
+  fieldsData = extractRes.data.info.FieldsInfo.Fields;
+  Logger.info('EXTRACT', 'Using extractRes.data.info.FieldsInfo.Fields');
+} else if (extractRes.data.info?.fields) {
+  fieldsData = extractRes.data.info.fields;
+  Logger.info('EXTRACT', 'Using extractRes.data.info.fields');
+}
+
+Logger.info('EXTRACT', `Raw fields data: ${JSON.stringify(fieldsData).substring(0, 200)}...`);
 
     const cleanFields = fieldsData
       .filter(field => field.FieldName || field.fieldName || field.name)
@@ -443,6 +460,14 @@ app.post('/api/extract-fields', async (req, res) => {
         value: field.Value || field.value || '',
         required: field.Required || field.required || false
       }));
+      
+      if (cleanFields.length === 0) {
+  Logger.error('EXTRACT', 'No valid fields found after cleaning');
+  return res.status(400).json({ 
+    success: false, 
+    error: 'Keine Formularfelder im PDF gefunden. Stellen Sie sicher, dass es sich um ein interaktives PDF-Formular handelt.' 
+  });
+}
 
     const session = {
       sessionId,
@@ -837,25 +862,25 @@ app.post('/api/chat', async (req, res) => {
       
       try {
         const aiRes = await axios.post(
-          'https://api.cometapi.com/v1/chat/completions',
-          {
-            model: MODEL_NAME,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: lastUserMsg }
-            ],
-            temperature: 0.75,
-            max_tokens: 300,
-            top_p: 0.9
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${COMET_API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            timeout: 15000
-          }
-        );
+  'https://api.cometapi.com/v1/chat/completions',
+  {
+    model: MODEL_NAME,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: lastUserMsg }
+    ],
+    temperature: 0.75,
+    max_tokens: 300,
+    top_p: 0.9
+  },
+  {
+    headers: {
+      'x-api-key': COMET_API_KEY,  // ✅ RICHTIG!
+      'Content-Type': 'application/json'
+    },
+    timeout: 15000
+  }
+);
         
         aiResponse = aiRes.data.choices?.[0]?.message?.content || `✅ "${lastUserMsg}" gespeichert!`;
         Logger.success('CHAT', `KI-Antwort erfolgreich generiert`);
