@@ -874,14 +874,32 @@ try {
     }
   } else {
     aiResponse += '\n\n🎊 **Herzlichen Glückwunsch!** Alle Felder sind ausgefüllt. Du kannst das PDF jetzt herunterladen!'; 
-    Logger.info('CHAT', `Feld ${field.fieldName} gespeichert, Index: ${session.currentFieldIndex}`);
+          }
+      
+      // Hier geht es weiter
+      Logger.info('CHAT', `Feld ${field.fieldName} gespeichert, Index: ${session.currentFieldIndex}`);
+      return res.json({
+        success: true,
+        response: aiResponse,
+        action: 'field_saved',
+        nextFieldIndex: session.currentFieldIndex,
+        collectedData: session.collectedData
+      });
+    }
+    
+    // Fallback
+    Logger.info('CHAT', 'Keine Aktion erkannt, Standardantwort');
     return res.json({
       success: true,
-      response: aiResponse,
-      action: 'field_saved',
-      nextFieldIndex: session.currentFieldIndex,
-      collectedData: session.collectedData
+      response: 'Bitte gib einen Wert ein oder nutze "hilfe" für Unterstützung.',
+      isCommand: true
     });
+    
+  } catch (err) {
+    Logger.error('CHAT', 'Failed', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 Logger.debug('✓ Chat endpoint registered');
 
