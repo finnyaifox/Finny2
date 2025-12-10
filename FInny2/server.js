@@ -834,49 +834,46 @@ app.post('/api/chat', async (req, res) => {
 
 // Logging für Debugging
 Logger.info('CHAT', `Generiere KI-Antwort für Feld ${field.fieldName} mit System Prompt Länge: ${systemPrompt.length}`);
-
-      const aiRes = await axios.post(
-        'https://api.cometapi.com/v1/chat/completions',
-        {
-          model: MODEL_NAME,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: lastUserMsg }
-          ],
-          temperature: 0.75, // Ausgewogen zwischen kreativ und präzise
-          max_tokens: 300,
-          top_p: 0.9
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${COMET_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          timeout: 15000 // Längeres Timeout für komplexere Prompts
-        }
-      );
-      
-      aiResponse = aiRes.data.choices?.[0]?.message?.content || `✅ "${lastUserMsg}" gespeichert!`;
-      Logger.success('CHAT', `KI-Antwort erfolgreich generiert`);
-      
-    } catch (err) {
-      Logger.warn('COMET', 'AI fehlgeschlagen, Fallback verwendet', err);
-      // Intelligenter Fallback
-      aiResponse = `✅ "${lastUserMsg}" für **${field.fieldName}** gespeichert!`;
-      
-      const nextField = session.fields[session.currentFieldIndex];
-      if (nextField) {
-        const remaining = session.fields.length - session.currentFieldIndex;
-        if (remaining <= 3) {
-          aiResponse += `\n\n🎉 Fast geschafft! Nur noch ${remaining} Feld${remaining > 1 ? 'er' : ''}. Du schaffst das!`;
-        } else {
-          aiResponse += `\n\nNächstes Feld: **${nextField.fieldName}**. Weiter so!`;
-        }
-      } else {
-        aiResponse += '\n\n🎊 **Herzlichen Glückwunsch!** Alle Felder sind ausgefüllt. Du kannst das PDF jetzt herunterladen!';
-      }
+try {
+  const aiRes = await axios.post(
+    'https://api.cometapi.com/v1/chat/completions',
+    {
+      model: MODEL_NAME,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: lastUserMsg }
+      ],
+      temperature: 0.75,
+      max_tokens: 300,
+      top_p: 0.9
+    },
+    {
+      headers: {
+        'Authorization': `Bearer ${COMET_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 15000
     }
-    
+  );
+  
+  aiResponse = aiRes.data.choices?.[0]?.message?.content || `✅ "${lastUserMsg}" gespeichert!`;
+  Logger.success('CHAT', `KI-Antwort erfolgreich generiert`);
+  
+} catch (err) {
+  Logger.warn('COMET', 'AI fehlgeschlagen, Fallback verwendet', err);
+  // Intelligenter Fallback
+  aiResponse = `✅ "${lastUserMsg}" für **${field.fieldName}** gespeichert!`;
+  
+  const nextField = session.fields[session.currentFieldIndex];
+  if (nextField) {
+    const remaining = session.fields.length - session.currentFieldIndex;
+    if (remaining <= 3) {
+      aiResponse += `\n\n🎉 Fast geschafft! Nur noch ${remaining} Feld${remaining > 1 ? 'er' : ''}. Du schaffst das!`;
+    } else {
+      aiResponse += `\n\nNächstes Feld: **${nextField.fieldName}**. Weiter so!`;
+    }
+  } else {
+    aiResponse += '\n\n🎊 **Herzlichen Glückwunsch!** Alle Felder sind ausgefüllt. Du kannst das PDF jetzt herunterladen!'; 
     Logger.info('CHAT', `Feld ${field.fieldName} gespeichert, Index: ${session.currentFieldIndex}`);
     return res.json({
       success: true,
