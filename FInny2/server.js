@@ -882,21 +882,6 @@ try {
       nextFieldIndex: session.currentFieldIndex,
       collectedData: session.collectedData
     });
-  }
-    
-    // Fallback
-    Logger.info('CHAT', 'Keine Aktion erkannt, Standardantwort');
-    return res.json({
-      success: true,
-      response: 'Bitte gib einen Wert ein oder nutze "hilfe" für Unterstützung.',
-      isCommand: true
-    });
-    
-  } catch (err) {
-    Logger.error('CHAT', 'Failed', err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
 
 Logger.debug('✓ Chat endpoint registered');
 
