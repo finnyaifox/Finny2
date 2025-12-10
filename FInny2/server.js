@@ -921,8 +921,6 @@ app.post('/api/chat', async (req, res) => {
       response: 'Bitte gib einen Wert ein oder nutze "hilfe" für Unterstützung.',
       isCommand: true
     });
-    
-  }
   
   } catch (err) {
     Logger.error('CHAT', 'Failed', err);
