@@ -914,7 +914,7 @@ app.post('/api/chat', async (req, res) => {
       });
     }
     
-    // Fallback für leere/unbekannte Eingabe
+        // Fallback für leere/unbekannte Eingabe
     Logger.info('CHAT', 'Keine Aktion erkannt, Standardantwort');
     return res.json({
       success: true,
@@ -922,11 +922,14 @@ app.post('/api/chat', async (req, res) => {
       isCommand: true
     });
     
+  }
+  
   } catch (err) {
     Logger.error('CHAT', 'Failed', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 
 Logger.debug('✓ Chat endpoint registered');
 
