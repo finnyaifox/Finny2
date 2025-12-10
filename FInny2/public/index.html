@@ -74,14 +74,13 @@
             text-shadow: 0 0 20px var(--primary-glow);
         }
 
-        /* CONTAINER */
         .main-container {
-            display: flex;
-            flex: 1;
-            gap: 20px;
-            padding: 15px;
-            overflow: hidden;
-        }
+    display: flex;
+    flex: 1;
+    gap: 20px;
+    padding: 15px;
+    overflow: auto;
+}
 
         .left-panel {
             width: 320px;
@@ -495,26 +494,30 @@
         padding: 10px;
     }
     
-    .main-container {           /* ✅ Korrekte Klasse */
+    .main-container {
         flex-direction: column;
         gap: 10px;
         padding: 10px;
+        overflow: auto;        /* ✅ Sicherstellen, dass Scrollen geht */
     }
     
-    .left-panel {               /* ✅ Korrekte Klasse */
+    /* ✅ NEU: Reihenfolge vertauschen */
+    .left-panel {
         width: 100% !important;
         max-width: 100% !important;
+        order: 2;              /* ✅ Felder kommen NACH dem Chat */
     }
     
-    .right-panel {              /* ✅ Korrekte Klasse */
+    .right-panel {
         width: 100% !important;
+        order: 1;              /* ✅ Chat kommt VOR den Feldern */
     }
     
-    .header-top h1 {            /* ✅ Korrekte Klasse */
+    .header-top h1 {
         font-size: 24px;
     }
     
-    .file-upload {              /* ✅ Korrekte Klasse */
+    .file-upload {
         padding: 20px;
         min-height: 120px;
     }
