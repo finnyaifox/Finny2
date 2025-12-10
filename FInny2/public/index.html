@@ -1,11 +1,40 @@
-    <!-- ANIMIERTE LIVE-UHR -->
-    <div class="live-clock" style="position: fixed; top: 15px; right: 20px; z-index: 1000;">
-        <div class="clock-icon"></div>
-        <div class="clock-display">
-            <div class="clock-time" id="clockTime">00:00:00</div>
-            <div class="clock-date" id="clockDate">Laden...</div>
-        </div>
-    </div>            flex-direction: column;
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finny - AI PDF Assistent</title>
+    <style>
+        :root {
+            --bg-dark: #1a0f05;
+            --bg-panel: #2d1810;
+            --bg-darker: #140a03;
+            --primary: #ff7e21;
+            --primary-hover: #ff9f5a;
+            --primary-glow: rgba(255, 126, 33, 0.4);
+            --accent-green: #2ecc71;
+            --accent-green-hover: #27ae60;
+            --accent-green-glow: rgba(46, 204, 113, 0.3);
+            --text-main: #ffffff;
+            --text-muted: #c4a882;
+            --border: #4a2f1a;
+            --success: #2ecc71;
+            --warning: #f39c12;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #2a1508 50%, var(--bg-darker) 100%);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
         }
 
